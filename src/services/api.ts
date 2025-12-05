@@ -137,7 +137,7 @@ class ApiService {
   async joinMatch(matchId: string, preferredSide?: TeamSide): Promise<ApiResponse<MatchResponse>> {
     const response = await this.client.post<ApiResponse<MatchResponse>>(
       `/api/matches/${matchId}/join`,
-      preferredSide ? { preferredSide } : undefined
+      preferredSide ? { team: preferredSide } : {}
     );
     return response.data;
   }
@@ -145,13 +145,18 @@ class ApiService {
   async joinMatchByCode(code: string, preferredSide?: TeamSide): Promise<ApiResponse<MatchResponse>> {
     const response = await this.client.post<ApiResponse<MatchResponse>>(
       `/api/matches/code/${code}/join`,
-      preferredSide ? { preferredSide } : undefined
+      preferredSide ? { team: preferredSide } : {}
     );
     return response.data;
   }
 
   async leaveMatch(matchId: string): Promise<ApiResponse<MatchResponse>> {
     const response = await this.client.post<ApiResponse<MatchResponse>>(`/api/matches/${matchId}/leave`);
+    return response.data;
+  }
+
+  async startMatch(matchId: string): Promise<ApiResponse<MatchResponse>> {
+    const response = await this.client.post<ApiResponse<MatchResponse>>(`/api/matches/${matchId}/start`);
     return response.data;
   }
 }

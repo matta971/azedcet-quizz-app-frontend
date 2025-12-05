@@ -35,6 +35,8 @@ export function LobbyScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
+  const [selectedTeamSize, setSelectedTeamSize] = useState(3);
+  const [isRanked, setIsRanked] = useState(true);
 
   useEffect(() => {
     fetchWaitingMatches();
@@ -44,11 +46,11 @@ export function LobbyScreen() {
     fetchWaitingMatches();
   };
 
-  const handleCreateMatch = async (duo: boolean) => {
+  const handleCreateMatch = async () => {
     const match = await createMatch({
-      gameMode: 'CLASSIC',
-      maxPlayers: duo ? 2 : 4,
-      privateMatch: false,
+      mode: 'CLASSIC',
+      maxPlayersPerTeam: selectedTeamSize,
+      ranked: isRanked,
     });
     if (match) {
       setShowCreateModal(false);
@@ -84,8 +86,8 @@ export function LobbyScreen() {
   };
 
   const renderMatch = ({ item }: { item: MatchResponse }) => {
-    const totalPlayers = item.teamA.players.length + item.teamB.players.length;
-    const maxPlayers = item.duo ? 2 : 4;
+    const totalPlayers = item.teamA.playerCount + item.teamB.playerCount;
+    const maxPlayers = item.maxPlayersPerTeam * 2;
 
     return (
       <TouchableOpacity
@@ -94,22 +96,27 @@ export function LobbyScreen() {
       >
         <View style={styles.matchHeader}>
           <Text style={styles.matchCode}>{item.code}</Text>
-          <Text style={styles.matchMode}>{item.gameMode}</Text>
+          <View style={styles.matchBadges}>
+            {item.ranked && <Text style={styles.matchRanked}>RANKED</Text>}
+            {item.duo && <Text style={styles.matchDuo}>1v1</Text>}
+          </View>
         </View>
         <View style={styles.matchInfo}>
           <Text style={styles.matchPlayers}>
-            {totalPlayers}/{maxPlayers} joueurs
+            {totalPlayers}/{maxPlayers} joueurs ({item.maxPlayersPerTeam}v{item.maxPlayersPerTeam})
           </Text>
-          {item.duo && <Text style={styles.matchDuo}>DUO</Text>}
         </View>
         <View style={styles.teamsPreview}>
           <Text style={styles.teamText}>
-            A: {item.teamA.players.map((p) => p.handle).join(', ') || '-'}
+            A: {item.teamA.playerCount}/{item.maxPlayersPerTeam} {item.teamA.isFull ? '✓' : ''} - {item.teamA.players.map((p) => p.handle).join(', ') || 'En attente...'}
           </Text>
           <Text style={styles.teamText}>
-            B: {item.teamB.players.map((p) => p.handle).join(', ') || '-'}
+            B: {item.teamB.playerCount}/{item.maxPlayersPerTeam} {item.teamB.isFull ? '✓' : ''} - {item.teamB.players.map((p) => p.handle).join(', ') || 'En attente...'}
           </Text>
         </View>
+        {item.canStart && (
+          <Text style={styles.matchReady}>Prêt à démarrer</Text>
+        )}
       </TouchableOpacity>
     );
   };
@@ -170,17 +177,52 @@ export function LobbyScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Créer un match</Text>
+
+            <Text style={styles.modalLabel}>Joueurs par équipe</Text>
+            <View style={styles.teamSizeSelector}>
+              {[1, 2, 3, 4, 5].map((size) => (
+                <TouchableOpacity
+                  key={size}
+                  style={[
+                    styles.teamSizeButton,
+                    selectedTeamSize === size && styles.teamSizeButtonActive,
+                  ]}
+                  onPress={() => setSelectedTeamSize(size)}
+                >
+                  <Text
+                    style={[
+                      styles.teamSizeButtonText,
+                      selectedTeamSize === size && styles.teamSizeButtonTextActive,
+                    ]}
+                  >
+                    {size}v{size}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => handleCreateMatch(false)}
+              style={styles.rankedToggle}
+              onPress={() => setIsRanked(!isRanked)}
             >
-              <Text style={styles.modalButtonText}>Match classique (4 joueurs)</Text>
+              <View style={[styles.checkbox, isRanked && styles.checkboxActive]}>
+                {isRanked && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.rankedLabel}>Match classé (Ranked)</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={() => handleCreateMatch(true)}
+              onPress={handleCreateMatch}
+              disabled={isLoading}
             >
-              <Text style={styles.modalButtonText}>Match duo (2 joueurs)</Text>
+              {isLoading ? (
+                <ActivityIndicator color="#1a1a2e" />
+              ) : (
+                <Text style={styles.modalButtonText}>
+                  Créer ({selectedTeamSize}v{selectedTeamSize})
+                </Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.modalCancelButton}
@@ -323,9 +365,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  matchMode: {
-    color: '#888',
-    fontSize: 14,
+  matchBadges: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  matchRanked: {
+    backgroundColor: '#ffd700',
+    color: '#1a1a2e',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   matchInfo: {
     flexDirection: 'row',
@@ -343,8 +394,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  matchReady: {
+    color: '#00ff88',
     fontSize: 12,
     fontWeight: 'bold',
+    marginTop: 8,
+    textAlign: 'center',
   },
   teamsPreview: {
     gap: 4,
@@ -418,5 +476,63 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#0f3460',
+  },
+  modalLabel: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  teamSizeSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  teamSizeButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+    alignItems: 'center',
+  },
+  teamSizeButtonActive: {
+    backgroundColor: '#00ff88',
+    borderColor: '#00ff88',
+  },
+  teamSizeButtonText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  teamSizeButtonTextActive: {
+    color: '#1a1a2e',
+  },
+  rankedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#0f3460',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxActive: {
+    backgroundColor: '#00ff88',
+    borderColor: '#00ff88',
+  },
+  checkmark: {
+    color: '#1a1a2e',
+    fontWeight: 'bold',
+  },
+  rankedLabel: {
+    color: '#fff',
+    fontSize: 14,
   },
 });

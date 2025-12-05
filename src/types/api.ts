@@ -48,11 +48,11 @@ export type UserRole = 'PLAYER' | 'REFEREE' | 'AUTHOR' | 'ADMIN';
 
 // Match types
 export interface CreateMatchRequest {
-  gameMode: GameMode;
-  maxPlayers: number;
+  mode: GameMode;
+  maxPlayersPerTeam: number;
   region?: string;
-  privateMatch: boolean;
-  preferredSide?: TeamSide;
+  ranked: boolean;
+  customRounds?: string[];
 }
 
 export interface JoinMatchRequest {
@@ -65,28 +65,37 @@ export interface MatchResponse {
   id: string;
   code: string;
   status: MatchStatus;
-  gameMode: GameMode;
+  ranked: boolean;
   duo: boolean;
-  privateMatch: boolean;
-  region?: string;
+  maxPlayersPerTeam: number;
   teamA: TeamResponse;
   teamB: TeamResponse;
+  scoreTeamA: number;
+  scoreTeamB: number;
+  currentRound?: number;
+  currentRoundType?: string;
+  canStart: boolean;
   createdAt: string;
   startedAt?: string;
+  finishedAt?: string;
 }
 
 export interface TeamResponse {
+  id: string;
   side: TeamSide;
-  score: number;
-  players: PlayerResponse[];
+  name?: string;
   captainId?: string;
+  players: PlayerResponse[];
+  playerCount: number;
+  isFull: boolean;
 }
 
 export interface PlayerResponse {
   id: string;
+  userId: string;
   handle: string;
-  rating: number;
-  penalties: number;
+  rating?: number;
+  penalties?: number;
   suspended: boolean;
 }
 

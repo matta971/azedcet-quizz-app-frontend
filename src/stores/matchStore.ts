@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { apiService } from '../services';
 import { MatchResponse, CreateMatchRequest, TeamSide } from '../types';
+import { LobbyUpdatedPayload } from '../types/websocket';
 
 interface MatchState {
   currentMatch: MatchResponse | null;
@@ -15,8 +16,10 @@ interface MatchState {
   joinMatch: (matchId: string, preferredSide?: TeamSide) => Promise<MatchResponse | null>;
   joinMatchByCode: (code: string, preferredSide?: TeamSide) => Promise<MatchResponse | null>;
   leaveMatch: () => Promise<boolean>;
+  startMatch: (matchId: string) => Promise<MatchResponse | null>;
   setCurrentMatch: (match: MatchResponse | null) => void;
   updateMatch: (match: Partial<MatchResponse>) => void;
+  updateLobbyStatus: (payload: LobbyUpdatedPayload) => void;
   clearError: () => void;
 }
 
@@ -122,12 +125,55 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     }
   },
 
+  startMatch: async (matchId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await apiService.startMatch(matchId);
+      if (response.success && response.data) {
+        set({ currentMatch: response.data, isLoading: false });
+        return response.data;
+      } else {
+        set({ error: response.error?.message || 'Failed to start match', isLoading: false });
+        return null;
+      }
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to start match', isLoading: false });
+      return null;
+    }
+  },
+
   setCurrentMatch: (match: MatchResponse | null) => set({ currentMatch: match }),
 
   updateMatch: (updates: Partial<MatchResponse>) => {
     const { currentMatch } = get();
     if (currentMatch) {
       set({ currentMatch: { ...currentMatch, ...updates } });
+    }
+  },
+
+  updateLobbyStatus: (payload: LobbyUpdatedPayload) => {
+    const { currentMatch } = get();
+    if (currentMatch && currentMatch.id === payload.matchId) {
+      // Update the current match with new lobby status
+      set({
+        currentMatch: {
+          ...currentMatch,
+          maxPlayersPerTeam: payload.maxPlayersPerTeam,
+          canStart: payload.canStart,
+          teamA: {
+            ...currentMatch.teamA,
+            playerCount: payload.teamA.playerCount,
+            isFull: payload.teamA.isFull,
+            captainId: payload.teamA.captainId || undefined,
+          },
+          teamB: {
+            ...currentMatch.teamB,
+            playerCount: payload.teamB.playerCount,
+            isFull: payload.teamB.isFull,
+            captainId: payload.teamB.captainId || undefined,
+          },
+        },
+      });
     }
   },
 

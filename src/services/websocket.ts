@@ -1,7 +1,7 @@
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { config } from '../config';
-import { storageUtils } from '../utils/storage';
+import { syncStorage } from '../utils/storage';
 import { WsMessage, WsEventType } from '../types';
 
 type MessageHandler = (message: WsMessage) => void;
@@ -15,7 +15,7 @@ class WebSocketService {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const token = storageUtils.getString(config.storage.accessTokenKey);
+      const token = syncStorage.getString(config.storage.accessTokenKey);
 
       console.log('[WebSocket] Attempting to connect to:', config.api.wsUrl);
       console.log('[WebSocket] Token present:', !!token);
@@ -102,10 +102,14 @@ class WebSocketService {
   private handleMessage(message: IMessage): void {
     try {
       const wsMessage: WsMessage = JSON.parse(message.body);
+      console.log('[WebSocket] Received:', wsMessage.type, wsMessage.payload);
+
       const handlers = this.handlers.get(wsMessage.type);
 
       if (handlers) {
         handlers.forEach((handler) => handler(wsMessage));
+      } else {
+        console.log('[WebSocket] No handlers registered for:', wsMessage.type);
       }
 
       // Also call global handlers
@@ -142,6 +146,43 @@ class WebSocketService {
 
   sendAnswer(matchId: string, questionId: string, answer: string): void {
     this.send(`/app/match/${matchId}/answer`, { questionId, answer });
+  }
+
+  // === SMASH-specific methods ===
+
+  /**
+   * Send TOP button press (SMASH A only).
+   */
+  sendSmashTop(matchId: string): void {
+    this.send(`/app/match/${matchId}/smash/top`, {});
+  }
+
+  /**
+   * Send a SMASH question (attacker submits their question).
+   */
+  sendSmashQuestion(matchId: string, questionText: string): void {
+    this.send(`/app/match/${matchId}/smash/question`, { questionText });
+  }
+
+  /**
+   * Validate or invalidate a SMASH question (defender).
+   */
+  sendSmashValidate(matchId: string, valid: boolean, reason?: string): void {
+    this.send(`/app/match/${matchId}/smash/validate`, { valid, reason });
+  }
+
+  /**
+   * Send a SMASH answer (defender answers the question).
+   */
+  sendSmashAnswer(matchId: string, answer: string): void {
+    this.send(`/app/match/${matchId}/smash/answer`, { answer });
+  }
+
+  /**
+   * Validate the SMASH answer result (attacker confirms correct/incorrect).
+   */
+  sendSmashResult(matchId: string, correct: boolean): void {
+    this.send(`/app/match/${matchId}/smash/result`, { correct });
   }
 
   private send(destination: string, body: object): void {

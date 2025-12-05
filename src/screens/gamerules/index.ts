@@ -1,0 +1,1 @@
+export { GameRulesScreen } from './GameRulesScreen';

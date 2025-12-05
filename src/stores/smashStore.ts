@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { wsService } from '../services';
+import { wsService, apiService } from '../services';
 import {
   WsMessage,
   RoundType,
@@ -12,6 +12,7 @@ import {
   SmashResultPayload,
   SmashTimeoutPayload,
   ScoreUpdatePayload,
+  SmashQuestionOption,
 } from '../types';
 
 interface SmashState {
@@ -34,6 +35,13 @@ interface SmashState {
   // Question state
   currentQuestion: string | null;
   currentAnswer: string | null;
+  expectedAnswer: string | null; // La réponse attendue (pour l'attaquant qui a choisi une question prédéfinie)
+
+  // Proposed questions (for attacker to choose from)
+  proposedQuestions: SmashQuestionOption[];
+  selectedQuestion: SmashQuestionOption | null;
+  isLoadingQuestions: boolean;
+  questionMode: 'custom' | 'predefined' | null; // SMASH_A: choix, SMASH_B: toujours 'predefined'
 
   // Timer state
   remainingTimeMs: number;
@@ -61,6 +69,12 @@ interface SmashState {
   sendValidation: (valid: boolean, reason?: string) => void;
   sendAnswer: (answer: string) => void;
   sendResult: (correct: boolean) => void;
+
+  // Question selection actions
+  fetchProposedQuestions: () => Promise<void>;
+  selectQuestion: (question: SmashQuestionOption) => void;
+  setQuestionMode: (mode: 'custom' | 'predefined') => void;
+  sendSelectedQuestion: () => void;
 
   // Timer
   updateTimer: () => void;
@@ -113,6 +127,11 @@ export const useSmashStore = create<SmashState>((set, get) => {
     hasConcertation: false,
     currentQuestion: null,
     currentAnswer: null,
+    expectedAnswer: null,
+    proposedQuestions: [],
+    selectedQuestion: null,
+    isLoadingQuestions: false,
+    questionMode: null,
     remainingTimeMs: 0,
     timerStartTime: null,
     timerDurationMs: 0,
@@ -131,6 +150,10 @@ export const useSmashStore = create<SmashState>((set, get) => {
         const payload = msg.payload as SmashTurnPayload;
         console.log('[SmashStore] SMASH_TURN_START received:', payload);
         clearTimer();
+
+        // Pour SMASH_B, forcer le mode prédéfini (pas de question custom)
+        const newQuestionMode = payload.roundType === 'SMASH_B' ? 'predefined' : null;
+
         set({
           turnNumber: payload.turnNumber,
           attackerTeam: payload.attackerTeam,
@@ -140,8 +163,17 @@ export const useSmashStore = create<SmashState>((set, get) => {
           currentPhase: 'TURN_START',
           currentQuestion: null,
           currentAnswer: null,
+          expectedAnswer: null,
+          proposedQuestions: [],
+          selectedQuestion: null,
+          questionMode: newQuestionMode,
           lastResult: null,
         });
+
+        // Pour SMASH_B, charger automatiquement les questions proposées
+        if (payload.roundType === 'SMASH_B') {
+          get().fetchProposedQuestions();
+        }
       });
 
       // SMASH Concertation (SMASH A only)
@@ -350,6 +382,40 @@ export const useSmashStore = create<SmashState>((set, get) => {
       wsService.sendSmashResult(matchId, correct);
     },
 
+    fetchProposedQuestions: async () => {
+      const { roundType } = get();
+      set({ isLoadingQuestions: true });
+      try {
+        const response = await apiService.getRandomSmashQuestions(10, roundType as 'SMASH_A' | 'SMASH_B');
+        if (response.success && response.data) {
+          set({ proposedQuestions: response.data });
+        }
+      } catch (error) {
+        console.error('[SmashStore] Error fetching proposed questions:', error);
+      } finally {
+        set({ isLoadingQuestions: false });
+      }
+    },
+
+    selectQuestion: (question: SmashQuestionOption) => {
+      set({ selectedQuestion: question, expectedAnswer: question.answer });
+    },
+
+    setQuestionMode: (mode: 'custom' | 'predefined') => {
+      set({ questionMode: mode, selectedQuestion: null, expectedAnswer: null });
+      // Si mode prédéfini, charger les questions
+      if (mode === 'predefined') {
+        get().fetchProposedQuestions();
+      }
+    },
+
+    sendSelectedQuestion: () => {
+      const { matchId, currentPhase, attackerTeam, myTeam, selectedQuestion } = get();
+      if (!matchId || currentPhase !== 'QUESTION' || attackerTeam !== myTeam || !selectedQuestion) return;
+      // Envoyer la question sélectionnée
+      wsService.sendSmashQuestion(matchId, selectedQuestion.text);
+    },
+
     updateTimer: () => {
       const { timerStartTime, timerDurationMs } = get();
       if (timerStartTime) {
@@ -374,6 +440,11 @@ export const useSmashStore = create<SmashState>((set, get) => {
         hasConcertation: false,
         currentQuestion: null,
         currentAnswer: null,
+        expectedAnswer: null,
+        proposedQuestions: [],
+        selectedQuestion: null,
+        isLoadingQuestions: false,
+        questionMode: null,
         remainingTimeMs: 0,
         timerStartTime: null,
         timerDurationMs: 0,

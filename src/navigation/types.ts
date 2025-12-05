@@ -57,6 +57,7 @@ export type RootStackParamList = {
   };
   Settings: undefined;
   Tutorial: undefined;
+  ProfileEdit: undefined;
 };
 
 // Screen props types

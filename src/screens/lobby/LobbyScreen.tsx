@@ -12,11 +12,16 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useMatchStore, useAuthStore, useGameStore } from '../../stores';
-import { RootStackParamList } from '../../navigation/types';
+import { RootStackParamList, MainTabParamList } from '../../navigation/types';
 import { MatchResponse, TeamSide } from '../../types';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, 'Lobby'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export function LobbyScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -26,36 +31,28 @@ export function LobbyScreen() {
     isLoading,
     error,
     fetchWaitingMatches,
-    createMatch,
     joinMatch,
     joinMatchByCode,
   } = useMatchStore();
   const { startGame } = useGameStore();
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
-  const [selectedTeamSize, setSelectedTeamSize] = useState(3);
-  const [isRanked, setIsRanked] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     fetchWaitingMatches();
   }, []);
 
-  const handleRefresh = () => {
-    fetchWaitingMatches();
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchWaitingMatches();
+    setIsRefreshing(false);
   };
 
-  const handleCreateMatch = async () => {
-    const match = await createMatch({
-      mode: 'CLASSIC',
-      maxPlayersPerTeam: selectedTeamSize,
-      ranked: isRanked,
-    });
-    if (match) {
-      setShowCreateModal(false);
-      navigation.navigate('MatchWaiting', { matchId: match.id });
-    }
+  const handleCreateMatch = () => {
+    // Navigate to game modes selection instead of creating directly
+    navigation.navigate('GameModes');
   };
 
   const handleJoinMatch = async (matchId: string, preferredSide?: TeamSide) => {
@@ -125,13 +122,13 @@ export function LobbyScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Salut, {user?.handle}!</Text>
-        <Text style={styles.title}>Lobby</Text>
+        <Text style={styles.title}>Rejoindre</Text>
       </View>
 
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => setShowCreateModal(true)}
+          onPress={handleCreateMatch}
         >
           <Text style={styles.actionButtonText}>Créer un match</Text>
         </TouchableOpacity>
@@ -149,7 +146,20 @@ export function LobbyScreen() {
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>Matchs en attente</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Matchs en attente</Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+          disabled={isRefreshing || isLoading}
+        >
+          {isRefreshing ? (
+            <ActivityIndicator size="small" color="#00ff88" />
+          ) : (
+            <Text style={styles.refreshIcon}>↻</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={waitingMatches}
@@ -166,73 +176,6 @@ export function LobbyScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-
-      {/* Create Match Modal */}
-      <Modal
-        visible={showCreateModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowCreateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Créer un match</Text>
-
-            <Text style={styles.modalLabel}>Joueurs par équipe</Text>
-            <View style={styles.teamSizeSelector}>
-              {[1, 2, 3, 4, 5].map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  style={[
-                    styles.teamSizeButton,
-                    selectedTeamSize === size && styles.teamSizeButtonActive,
-                  ]}
-                  onPress={() => setSelectedTeamSize(size)}
-                >
-                  <Text
-                    style={[
-                      styles.teamSizeButtonText,
-                      selectedTeamSize === size && styles.teamSizeButtonTextActive,
-                    ]}
-                  >
-                    {size}v{size}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              style={styles.rankedToggle}
-              onPress={() => setIsRanked(!isRanked)}
-            >
-              <View style={[styles.checkbox, isRanked && styles.checkboxActive]}>
-                {isRanked && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.rankedLabel}>Match classé (Ranked)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={handleCreateMatch}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#1a1a2e" />
-              ) : (
-                <Text style={styles.modalButtonText}>
-                  Créer ({selectedTeamSize}v{selectedTeamSize})
-                </Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalCancelButton}
-              onPress={() => setShowCreateModal(false)}
-            >
-              <Text style={styles.modalCancelText}>Annuler</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* Join by Code Modal */}
       <Modal
@@ -336,12 +279,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
   sectionTitle: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 255, 136, 0.15)',
+    borderWidth: 1,
+    borderColor: '#00ff88',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  refreshIcon: {
+    color: '#00ff88',
+    fontSize: 22,
+    fontWeight: 'bold',
   },
   listContent: {
     paddingHorizontal: 20,
@@ -476,63 +439,5 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#0f3460',
-  },
-  modalLabel: {
-    color: '#888',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  teamSizeSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  teamSizeButton: {
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#0f3460',
-    alignItems: 'center',
-  },
-  teamSizeButtonActive: {
-    backgroundColor: '#00ff88',
-    borderColor: '#00ff88',
-  },
-  teamSizeButtonText: {
-    color: '#888',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  teamSizeButtonTextActive: {
-    color: '#1a1a2e',
-  },
-  rankedToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#0f3460',
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxActive: {
-    backgroundColor: '#00ff88',
-    borderColor: '#00ff88',
-  },
-  checkmark: {
-    color: '#1a1a2e',
-    fontWeight: 'bold',
-  },
-  rankedLabel: {
-    color: '#fff',
-    fontSize: 14,
   },
 });

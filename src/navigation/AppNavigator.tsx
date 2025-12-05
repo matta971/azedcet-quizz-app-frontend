@@ -12,7 +12,7 @@ import { SmashGameScreen } from '../screens/game/SmashGameScreen';
 import { HomeScreen } from '../screens/home';
 import { LandingScreen } from '../screens/landing';
 import { GameModesScreen } from '../screens/modes';
-import { ProfileScreen } from '../screens/profile';
+import { ProfileScreen, ProfileEditScreen } from '../screens/profile';
 import { LeaderboardScreen } from '../screens/leaderboard';
 import { SettingsScreen } from '../screens/settings';
 import { TutorialScreen } from '../screens/tutorial';
@@ -88,8 +88,8 @@ function MainTabNavigator() {
         name="Lobby"
         component={LobbyScreen}
         options={{
-          tabBarLabel: 'Lobby',
-          tabBarIcon: ({ color }) => <TabIcon label="L" color={color} />,
+          tabBarLabel: 'Rejoindre',
+          tabBarIcon: ({ color }) => <TabIcon label="R" color={color} />,
         }}
       />
       <Tab.Screen
@@ -214,6 +214,14 @@ export function AppNavigator() {
               component={DuelLobbyScreen}
               options={{
                 animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="ProfileEdit"
+              component={ProfileEditScreen}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
               }}
             />
           </>

@@ -9,24 +9,77 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useAuthStore } from '../../stores';
 import { AuthScreenProps } from '../../navigation/types';
+import { Language } from '../../types';
+
+const LANGUAGES: { code: Language; name: string }[] = [
+  { code: 'FR', name: 'Français' },
+  { code: 'FON', name: 'Fɔngbè' },
+  { code: 'CR', name: 'Créole' },
+  { code: 'EN', name: 'English' },
+  { code: 'PT', name: 'Português' },
+  { code: 'ES', name: 'Español' },
+  { code: 'AR', name: 'العربية' },
+  { code: 'ZH', name: '中文' },
+  { code: 'DE', name: 'Deutsch' },
+  { code: 'IT', name: 'Italiano' },
+];
+
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: 'BEN', name: 'Bénin' },
+  { code: 'FRA', name: 'France' },
+  { code: 'SEN', name: 'Sénégal' },
+  { code: 'CIV', name: "Côte d'Ivoire" },
+  { code: 'CMR', name: 'Cameroun' },
+  { code: 'MAR', name: 'Maroc' },
+  { code: 'TUN', name: 'Tunisie' },
+  { code: 'DZA', name: 'Algérie' },
+  { code: 'BEL', name: 'Belgique' },
+  { code: 'CHE', name: 'Suisse' },
+  { code: 'CAN', name: 'Canada' },
+  { code: 'USA', name: 'États-Unis' },
+  { code: 'GBR', name: 'Royaume-Uni' },
+  { code: 'DEU', name: 'Allemagne' },
+  { code: 'ESP', name: 'Espagne' },
+  { code: 'PRT', name: 'Portugal' },
+  { code: 'BRA', name: 'Brésil' },
+  { code: 'CHN', name: 'Chine' },
+];
 
 export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
   const [handle, setHandle] = useState('');
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [country, setCountry] = useState<string>('');
+  const [preferredLanguage, setPreferredLanguage] = useState<Language>('FR');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
 
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+
   const { register, isLoading, error, clearError } = useAuthStore();
+
+  const validateBirthDate = (date: string): boolean => {
+    if (!date) return true; // Optional field
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(date)) return false;
+    const parsed = new Date(date);
+    return !isNaN(parsed.getTime()) && parsed < new Date();
+  };
 
   const handleRegister = async () => {
     setLocalError(null);
 
     if (!handle.trim() || !email.trim() || !password.trim()) {
-      setLocalError('Tous les champs sont obligatoires');
+      setLocalError('Pseudo, email et mot de passe sont obligatoires');
       return;
     }
 
@@ -40,12 +93,31 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
       return;
     }
 
+    if (birthDate && !validateBirthDate(birthDate)) {
+      setLocalError('Format de date invalide (AAAA-MM-JJ)');
+      return;
+    }
+
     await register({
       handle: handle.trim(),
       email: email.trim().toLowerCase(),
       password,
-      country: 'FRA',
+      firstName: firstName.trim() || undefined,
+      lastName: lastName.trim() || undefined,
+      birthDate: birthDate || undefined,
+      country: country || undefined,
+      preferredLanguage,
     });
+  };
+
+  const getCountryName = () => {
+    const found = COUNTRIES.find((c) => c.code === country);
+    return found ? found.name : 'Sélectionner un pays';
+  };
+
+  const getLanguageName = () => {
+    const found = LANGUAGES.find((l) => l.code === preferredLanguage);
+    return found ? found.name : 'Sélectionner une langue';
   };
 
   const handleNavigateToLogin = () => {
@@ -92,6 +164,57 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
             keyboardType="email-address"
           />
 
+          <Text style={styles.sectionLabel}>Informations personnelles (optionnel)</Text>
+
+          <View style={styles.row}>
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              placeholder="Prénom"
+              placeholderTextColor="#666"
+              value={firstName}
+              onChangeText={setFirstName}
+              autoCorrect={false}
+            />
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              placeholder="Nom"
+              placeholderTextColor="#666"
+              value={lastName}
+              onChangeText={setLastName}
+              autoCorrect={false}
+            />
+          </View>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Date de naissance (AAAA-MM-JJ)"
+            placeholderTextColor="#666"
+            value={birthDate}
+            onChangeText={setBirthDate}
+            autoCapitalize="none"
+            keyboardType="numbers-and-punctuation"
+          />
+
+          <TouchableOpacity
+            style={styles.pickerButton}
+            onPress={() => setShowCountryPicker(true)}
+          >
+            <Text style={[styles.pickerButtonText, !country && styles.placeholderText]}>
+              {getCountryName()}
+            </Text>
+            <Text style={styles.pickerArrow}>▼</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.pickerButton}
+            onPress={() => setShowLanguagePicker(true)}
+          >
+            <Text style={styles.pickerButtonText}>{getLanguageName()}</Text>
+            <Text style={styles.pickerArrow}>▼</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.sectionLabel}>Sécurité</Text>
+
           <TextInput
             style={styles.input}
             placeholder="Mot de passe"
@@ -127,6 +250,96 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Country Picker Modal */}
+      <Modal
+        visible={showCountryPicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Sélectionner un pays</Text>
+            <FlatList
+              data={COUNTRIES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalItem,
+                    country === item.code && styles.modalItemSelected,
+                  ]}
+                  onPress={() => {
+                    setCountry(item.code);
+                    setShowCountryPicker(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      country === item.code && styles.modalItemTextSelected,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowCountryPicker(false)}
+            >
+              <Text style={styles.modalCloseText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={showLanguagePicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowLanguagePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Langue préférée</Text>
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalItem,
+                    preferredLanguage === item.code && styles.modalItemSelected,
+                  ]}
+                  onPress={() => {
+                    setPreferredLanguage(item.code);
+                    setShowLanguagePicker(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      preferredLanguage === item.code && styles.modalItemTextSelected,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowLanguagePicker(false)}
+            >
+              <Text style={styles.modalCloseText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -158,6 +371,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
   },
+  sectionLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 8,
+    marginTop: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   errorContainer: {
     backgroundColor: '#ff4444',
     padding: 12,
@@ -168,6 +389,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
   },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   input: {
     backgroundColor: '#16213e',
     borderRadius: 8,
@@ -177,6 +402,31 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#0f3460',
+  },
+  halfInput: {
+    flex: 1,
+  },
+  pickerButton: {
+    backgroundColor: '#16213e',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  placeholderText: {
+    color: '#666',
+  },
+  pickerArrow: {
+    color: '#666',
+    fontSize: 12,
   },
   button: {
     backgroundColor: '#00ff88',
@@ -200,5 +450,52 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#00ff88',
     fontSize: 14,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#16213e',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0f3460',
+  },
+  modalItemSelected: {
+    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+  },
+  modalItemText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  modalItemTextSelected: {
+    color: '#00ff88',
+    fontWeight: 'bold',
+  },
+  modalCloseButton: {
+    marginTop: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#0f3460',
+  },
+  modalCloseText: {
+    color: '#888',
+    fontSize: 16,
   },
 });

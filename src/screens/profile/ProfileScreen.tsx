@@ -48,7 +48,7 @@ export function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    navigation.navigate('Settings' as any);
+    navigation.navigate('ProfileEdit');
   };
 
   const handleChangeAvatar = () => {

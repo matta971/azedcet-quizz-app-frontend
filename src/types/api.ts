@@ -11,12 +11,24 @@ export interface ApiError {
   fieldErrors?: Record<string, string>;
 }
 
+// Language type
+export type Language = 'FR' | 'EN' | 'PT' | 'ES' | 'AR' | 'ZH' | 'DE' | 'IT' | 'FON' | 'CR';
+
+export interface LanguageOption {
+  code: Language;
+  displayName: string;
+}
+
 // Auth types
 export interface RegisterRequest {
   handle: string;
   email: string;
   password: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string; // ISO date string: YYYY-MM-DD
   country?: string;
+  preferredLanguage?: Language;
 }
 
 export interface LoginRequest {
@@ -41,7 +53,19 @@ export interface UserInfo {
   email: string;
   role: UserRole;
   rating: number;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
   country?: string;
+  preferredLanguage?: Language;
+}
+
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
+  country?: string;
+  preferredLanguage?: Language;
 }
 
 export type UserRole = 'PLAYER' | 'REFEREE' | 'AUTHOR' | 'ADMIN';
@@ -110,4 +134,12 @@ export interface PageResponse<T> {
   totalPages: number;
   page: number;
   size: number;
+}
+
+// Question types
+export interface SmashQuestionOption {
+  id: string;
+  text: string;
+  answer: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
 }

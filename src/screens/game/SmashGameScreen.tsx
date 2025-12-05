@@ -9,12 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSmashStore } from '../../stores/smashStore';
 import { RootStackParamList } from '../../navigation/types';
-import { TeamSide } from '../../types';
+import { TeamSide, SmashQuestionOption } from '../../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'SmashGame'>;
@@ -37,10 +39,15 @@ export function SmashGameScreen() {
     hasConcertation,
     currentQuestion,
     currentAnswer,
+    expectedAnswer,
     remainingTimeMs,
     timerDurationMs,
     lastResult,
     roundType,
+    proposedQuestions,
+    selectedQuestion,
+    isLoadingQuestions,
+    questionMode,
     startSmashGame,
     endSmashGame,
     sendTop,
@@ -48,6 +55,10 @@ export function SmashGameScreen() {
     sendValidation,
     sendAnswer,
     sendResult,
+    fetchProposedQuestions,
+    selectQuestion,
+    setQuestionMode,
+    sendSelectedQuestion,
   } = useSmashStore();
 
   const [questionInput, setQuestionInput] = useState('');
@@ -116,6 +127,21 @@ export function SmashGameScreen() {
 
   const handleLeaveMatch = () => {
     navigation.navigate('Main', { screen: 'Lobby' });
+  };
+
+  const handleSelectQuestionMode = (mode: 'custom' | 'predefined') => {
+    console.log('[SmashGame] Selected question mode:', mode);
+    setQuestionMode(mode);
+  };
+
+  const handleSelectQuestion = (question: SmashQuestionOption) => {
+    console.log('[SmashGame] Selected question:', question.text);
+    selectQuestion(question);
+  };
+
+  const handleSendSelectedQuestion = () => {
+    console.log('[SmashGame] Sending selected question');
+    sendSelectedQuestion();
   };
 
   // Get team status text
@@ -198,28 +224,160 @@ export function SmashGameScreen() {
     );
   };
 
+  // Render question mode selection (SMASH A only)
+  const renderQuestionModeSelection = () => (
+    <View style={styles.modeSelectionContainer}>
+      <Text style={styles.modeSelectionTitle}>Comment voulez-vous poser votre question ?</Text>
+      <View style={styles.modeButtons}>
+        <TouchableOpacity
+          style={styles.modeButton}
+          onPress={() => handleSelectQuestionMode('custom')}
+        >
+          <Text style={styles.modeButtonText}>Ecrire ma question</Text>
+          <Text style={styles.modeButtonSubtext}>Posez votre propre question</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.modeButton}
+          onPress={() => handleSelectQuestionMode('predefined')}
+        >
+          <Text style={styles.modeButtonText}>Choisir une question</Text>
+          <Text style={styles.modeButtonSubtext}>Parmi 10 questions aleatoires</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // Render proposed questions list
+  const renderProposedQuestions = () => {
+    if (isLoadingQuestions) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00ffff" />
+          <Text style={styles.loadingText}>Chargement des questions...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.proposedQuestionsContainer}>
+        <Text style={styles.proposedQuestionsTitle}>Choisissez une question:</Text>
+        {roundType === 'SMASH_A' && (
+          <TouchableOpacity
+            style={styles.backToModeButton}
+            onPress={() => setQuestionMode(null)}
+          >
+            <Text style={styles.backToModeButtonText}>← Retour au choix</Text>
+          </TouchableOpacity>
+        )}
+        <FlatList
+          data={proposedQuestions}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              style={[
+                styles.questionOption,
+                selectedQuestion?.id === item.id && styles.questionOptionSelected,
+              ]}
+              onPress={() => handleSelectQuestion(item)}
+            >
+              <View style={styles.questionOptionHeader}>
+                <Text style={styles.questionOptionNumber}>{index + 1}</Text>
+                <View style={[styles.difficultyBadge, styles[`difficulty${item.difficulty}`]]}>
+                  <Text style={styles.difficultyText}>{item.difficulty}</Text>
+                </View>
+              </View>
+              <Text style={styles.questionOptionText}>{item.text}</Text>
+              {selectedQuestion?.id === item.id && (
+                <View style={styles.expectedAnswerContainer}>
+                  <Text style={styles.expectedAnswerLabel}>Reponse attendue:</Text>
+                  <Text style={styles.expectedAnswerText}>{item.answer}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+          style={styles.questionsList}
+          showsVerticalScrollIndicator={false}
+        />
+        {selectedQuestion && (
+          <TouchableOpacity style={styles.confirmQuestionButton} onPress={handleTop}>
+            <Text style={styles.confirmQuestionButtonText}>Lancer le TOP avec cette question</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
   // Render input area based on phase
   const renderInputArea = () => {
-    // CONCERTATION: Show question input + "Lancer le Top" button for attacker
+    // CONCERTATION: Different behavior for SMASH_A vs SMASH_B
     if (currentPhase === 'CONCERTATION' && isAttacker) {
+      // SMASH_B: Directly show question selection (no custom option)
+      if (roundType === 'SMASH_B') {
+        return renderProposedQuestions();
+      }
+
+      // SMASH_A: Show mode selection if not chosen, else show appropriate input
+      if (questionMode === null) {
+        return renderQuestionModeSelection();
+      }
+
+      if (questionMode === 'predefined') {
+        return renderProposedQuestions();
+      }
+
+      // Custom mode: Show question input + "Lancer le Top" button
       return (
         <View style={styles.inputArea}>
+          <TouchableOpacity
+            style={styles.backToModeButton}
+            onPress={() => setQuestionMode(null)}
+          >
+            <Text style={styles.backToModeButtonText}>← Retour au choix</Text>
+          </TouchableOpacity>
           <TextInput
             style={styles.questionInput}
-            placeholder="Entrer la question"
+            placeholder="Entrer votre question"
             placeholderTextColor="#666"
             value={questionInput}
             onChangeText={setQuestionInput}
+            multiline
           />
-          <TouchableOpacity style={styles.launchTopButton} onPress={handleTop}>
+          <TouchableOpacity
+            style={[styles.launchTopButton, !questionInput.trim() && styles.launchTopButtonDisabled]}
+            onPress={handleTop}
+            disabled={!questionInput.trim()}
+          >
             <Text style={styles.launchTopButtonText}>Lancer le Top</Text>
           </TouchableOpacity>
         </View>
       );
     }
 
-    // QUESTION: Show question input for attacker
+    // QUESTION phase: Handle both custom and predefined modes
     if (currentPhase === 'QUESTION' && isAttacker) {
+      // Predefined mode: Just confirm and send the selected question
+      if (questionMode === 'predefined' && selectedQuestion) {
+        return (
+          <View style={styles.inputArea}>
+            <View style={styles.questionDisplay}>
+              <Text style={styles.questionDisplayLabel}>Votre question:</Text>
+              <Text style={styles.questionDisplayText}>{selectedQuestion.text}</Text>
+            </View>
+            <View style={styles.expectedAnswerDisplay}>
+              <Text style={styles.expectedAnswerLabel}>Reponse attendue:</Text>
+              <Text style={styles.expectedAnswerText}>{selectedQuestion.answer}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSendSelectedQuestion}
+            >
+              <Text style={styles.submitButtonText}>Envoyer la question</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+
+      // Custom mode: Show question input
       return (
         <View style={styles.inputArea}>
           <TextInput
@@ -294,7 +452,7 @@ export function SmashGameScreen() {
       );
     }
 
-    // RESULT: Show question, answer, and result buttons for attacker
+    // RESULT: Show question, answer, expected answer (if predefined), and result buttons for attacker
     if (currentPhase === 'RESULT' && isAttacker) {
       return (
         <View style={styles.inputArea}>
@@ -302,8 +460,14 @@ export function SmashGameScreen() {
             <Text style={styles.questionDisplayLabel}>Question:</Text>
             <Text style={styles.questionDisplayText}>{currentQuestion}</Text>
           </View>
+          {expectedAnswer && (
+            <View style={styles.expectedAnswerDisplay}>
+              <Text style={styles.expectedAnswerLabel}>Reponse attendue:</Text>
+              <Text style={styles.expectedAnswerText}>{expectedAnswer}</Text>
+            </View>
+          )}
           <View style={styles.answerDisplay}>
-            <Text style={styles.answerDisplayLabel}>Reponse:</Text>
+            <Text style={styles.answerDisplayLabel}>Reponse du defenseur:</Text>
             <Text style={styles.answerDisplayText}>{currentAnswer}</Text>
           </View>
           <Text style={styles.resultPrompt}>La reponse est-elle correcte ?</Text>
@@ -708,6 +872,151 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     paddingVertical: 20,
+  },
+  // Question mode selection styles
+  modeSelectionContainer: {
+    marginTop: 20,
+  },
+  modeSelectionTitle: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modeButtons: {
+    gap: 12,
+  },
+  modeButton: {
+    backgroundColor: '#1a2a4a',
+    borderWidth: 2,
+    borderColor: '#00ffff',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modeButtonText: {
+    color: '#00ffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modeButtonSubtext: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  backToModeButton: {
+    marginBottom: 12,
+  },
+  backToModeButtonText: {
+    color: '#00ffff',
+    fontSize: 14,
+  },
+  launchTopButtonDisabled: {
+    borderColor: '#333',
+  },
+  // Proposed questions styles
+  proposedQuestionsContainer: {
+    marginTop: 10,
+  },
+  proposedQuestionsTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: '#888',
+    marginTop: 12,
+  },
+  questionsList: {
+    maxHeight: 300,
+  },
+  questionOption: {
+    backgroundColor: '#1a2a4a',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  questionOptionSelected: {
+    borderColor: '#00ffff',
+    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+  },
+  questionOptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  questionOptionNumber: {
+    color: '#00ffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  difficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  difficultyEASY: {
+    backgroundColor: '#00aa55',
+  },
+  difficultyMEDIUM: {
+    backgroundColor: '#ffaa00',
+  },
+  difficultyHARD: {
+    backgroundColor: '#ff4444',
+  },
+  difficultyText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  questionOptionText: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  expectedAnswerContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  expectedAnswerDisplay: {
+    backgroundColor: '#1a3a2a',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#00aa55',
+  },
+  expectedAnswerLabel: {
+    color: '#00aa55',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  expectedAnswerText: {
+    color: '#00ff88',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  confirmQuestionButton: {
+    backgroundColor: '#00ffff',
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  confirmQuestionButtonText: {
+    color: '#0a1628',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   eventMessages: {
     marginTop: 20,

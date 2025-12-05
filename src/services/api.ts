@@ -11,6 +11,10 @@ import {
   CreateMatchRequest,
   PageResponse,
   TeamSide,
+  SmashQuestionOption,
+  UpdateProfileRequest,
+  UserInfo,
+  LanguageOption,
 } from '../types';
 
 class ApiService {
@@ -157,6 +161,30 @@ class ApiService {
 
   async startMatch(matchId: string): Promise<ApiResponse<MatchResponse>> {
     const response = await this.client.post<ApiResponse<MatchResponse>>(`/api/matches/${matchId}/start`);
+    return response.data;
+  }
+
+  // Question endpoints
+  async getRandomSmashQuestions(count = 10, roundType?: 'SMASH_A' | 'SMASH_B'): Promise<ApiResponse<SmashQuestionOption[]>> {
+    const response = await this.client.get<ApiResponse<SmashQuestionOption[]>>('/api/questions/smash/random', {
+      params: { count, roundType },
+    });
+    return response.data;
+  }
+
+  // User endpoints
+  async getCurrentUser(): Promise<ApiResponse<UserInfo>> {
+    const response = await this.client.get<ApiResponse<UserInfo>>('/api/users/me');
+    return response.data;
+  }
+
+  async updateProfile(data: UpdateProfileRequest): Promise<ApiResponse<UserInfo>> {
+    const response = await this.client.put<ApiResponse<UserInfo>>('/api/users/me', data);
+    return response.data;
+  }
+
+  async getAvailableLanguages(): Promise<ApiResponse<LanguageOption[]>> {
+    const response = await this.client.get<ApiResponse<LanguageOption[]>>('/api/users/languages');
     return response.data;
   }
 }

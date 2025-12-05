@@ -250,10 +250,24 @@ export function OpponentSelectScreen() {
             </View>
           </View>
 
-          {/* Title */}
-          <Text style={styles.title}>
-            {isTeamGame ? 'MATCHS EN ATTENTE' : 'DUELS DISPONIBLES'}
-          </Text>
+          {/* Title with refresh button */}
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>
+              {isTeamGame ? 'MATCHS EN ATTENTE' : 'DUELS DISPONIBLES'}
+            </Text>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={handleRefresh}
+              disabled={isRefreshing || storeLoading}
+              activeOpacity={0.7}
+            >
+              {isRefreshing ? (
+                <ActivityIndicator size="small" color="#00ff88" />
+              ) : (
+                <Text style={styles.refreshIcon}>↻</Text>
+              )}
+            </TouchableOpacity>
+          </View>
           <Text style={styles.subtitle}>
             {isTeamGame
               ? `Rejoignez un match existant ou creez le votre (${maxPlayersPerTeam || 3}v${maxPlayersPerTeam || 3})`
@@ -439,11 +453,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     marginHorizontal: 2,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   title: {
     color: '#ffffff',
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 255, 136, 0.15)',
+    borderWidth: 1,
+    borderColor: '#00ff88',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  refreshIcon: {
+    color: '#00ff88',
+    fontSize: 22,
+    fontWeight: 'bold',
   },
   subtitle: {
     color: '#888',

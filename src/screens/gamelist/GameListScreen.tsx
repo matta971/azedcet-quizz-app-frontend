@@ -41,7 +41,7 @@ const GAMES_BY_CATEGORY: Record<string, { title: string; icon: string; games: Ga
         name: 'Smash A',
         description: 'Collez l\'equipe adverse avec une question verifiable',
         type: 'A',
-        players: '2-5 vs 2-5',
+        players: '1-5 vs 1-5',
         duration: '3-5 min',
         rules: [
           'Concertation autorisee (chat interne)',
@@ -56,7 +56,7 @@ const GAMES_BY_CATEGORY: Record<string, { title: string; icon: string; games: Ga
         name: 'Smash B',
         description: 'Mode pression pure sans concertation',
         type: 'A',
-        players: '2-5 vs 2-5',
+        players: '1-5 vs 1-5',
         duration: '3-5 min',
         rules: [
           'Pas de concertation',
@@ -100,7 +100,7 @@ const GAMES_BY_CATEGORY: Record<string, { title: string; icon: string; games: Ga
         name: 'Sprint Final',
         description: 'Phase finale ultra-rapide',
         type: 'A',
-        players: '2-5 vs 2-5',
+        players: '1-5 vs 1-5',
         duration: '2-3 min',
         rules: [
           '20 questions eclair',
@@ -151,7 +151,7 @@ const GAMES_BY_CATEGORY: Record<string, { title: string; icon: string; games: Ga
         name: 'Saut Patriotique',
         description: 'Serie de questions sur le pays de l\'equipe en tete',
         type: 'A',
-        players: '2-5 vs 2-5',
+        players: '1-5 vs 1-5',
         duration: '5 min',
         rules: [
           'Apres lecture du theme: "En voulez-vous?" Oui/Non',
@@ -164,7 +164,7 @@ const GAMES_BY_CATEGORY: Record<string, { title: string; icon: string; games: Ga
         name: 'Capoeira',
         description: 'Esquive et riposte',
         type: 'A',
-        players: '2-5 vs 2-5',
+        players: '1-5 vs 1-5',
         duration: '3-5 min',
         rules: [
           'Questions alternees',
@@ -225,7 +225,7 @@ const GAMES_BY_CATEGORY: Record<string, { title: string; icon: string; games: Ga
         name: 'Estocade',
         description: '3 questions tres difficiles',
         type: 'A',
-        players: '2-5 vs 2-5',
+        players: '1-5 vs 1-5',
         duration: '3-5 min',
         rules: [
           '3 questions difficiles',

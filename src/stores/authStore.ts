@@ -16,6 +16,7 @@ interface AuthState {
   logout: () => void;
   loadStoredAuth: () => void;
   clearError: () => void;
+  setUser: (user: UserInfo) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -85,4 +86,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  setUser: async (user: UserInfo) => {
+    await storageUtils.setObject(config.storage.userKey, user);
+    set({ user });
+  },
 }));

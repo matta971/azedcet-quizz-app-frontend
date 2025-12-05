@@ -381,6 +381,105 @@ L'équipe totalisant le plus de points à la fin des 2 tours.
 
 ---
 
+## **📡 Diagramme de séquence WebSocket SMASH**
+
+Le diagramme ci-dessous illustre la communication WebSocket complète pour un tour SMASH A :
+
+```
+┌─────────┐                    ┌─────────┐                    ┌─────────┐
+│ Client  │                    │ Server  │                    │ Client  │
+│ (Att.)  │                    │         │                    │ (Déf.)  │
+└────┬────┘                    └────┬────┘                    └────┬────┘
+     │                              │                              │
+     │    ◄── SMASH_TURN_START ───► │ ◄── SMASH_TURN_START ───►    │
+     │    (turnNumber, attacker,    │    (turnNumber, attacker,    │
+     │     defender, roundType)     │     defender, roundType)     │
+     │                              │                              │
+     │    ◄── SMASH_CONCERTATION ─► │ ◄── SMASH_CONCERTATION ──►   │
+     │    (Concertation illimitée)  │    (SMASH A uniquement)      │
+     │                              │                              │
+     │ ─── SMASH_TOP ──────────────►│                              │
+     │ (Capitaine appuie sur TOP)   │                              │
+     │                              │                              │
+     │    ◄── SMASH_TOP ───────────►│◄── SMASH_TOP ───────────►    │
+     │    (Chrono 3s démarre)       │    (Chrono 3s démarre)       │
+     │                              │                              │
+     │ ─── SMASH_QUESTION_SUBMIT ──►│                              │
+     │ (questionText)               │                              │
+     │                              │                              │
+     │    ◄── SMASH_QUESTION_SUBMIT │◄── SMASH_VALIDATE_PROMPT ►   │
+     │                              │    (question, 3s pour        │
+     │                              │     valider)                 │
+     │                              │                              │
+     │                              │◄── SMASH_VALIDATE ───────────│
+     │                              │    (valid: true/false)       │
+     │                              │                              │
+     ├── Si VALIDE ─────────────────┼───────────────────────────────┤
+     │                              │                              │
+     │    ◄── SMASH_QUESTION_VALID ►│◄── SMASH_ANSWER_PROMPT ──►   │
+     │                              │    (10s pour répondre)       │
+     │                              │                              │
+     │                              │◄── SMASH_ANSWER_SUBMIT ──────│
+     │                              │    (answer)                  │
+     │                              │                              │
+     │    ◄── SMASH_RESULT_PROMPT ─►│◄── SMASH_ANSWER_SUBMIT ──►   │
+     │    (Valider la réponse)      │                              │
+     │                              │                              │
+     │ ─── SMASH_RESULT ───────────►│                              │
+     │ (correct: true/false)        │                              │
+     │                              │                              │
+     │    ◄── SMASH_ANSWER_CORRECT ►│◄── SMASH_ANSWER_CORRECT ─►   │
+     │    ou SMASH_ANSWER_INCORRECT │    (+10 si correct)          │
+     │                              │                              │
+     ├── Si INVALIDE ───────────────┼───────────────────────────────┤
+     │                              │                              │
+     │    ◄── SMASH_QUESTION_INVALID│◄── SMASH_QUESTION_INVALID ►  │
+     │    (Défenseur +10)           │    (Défenseur +10)           │
+     │                              │                              │
+     ├── Fin du tour ───────────────┼───────────────────────────────┤
+     │                              │                              │
+     │    ◄── SCORE_UPDATED ───────►│◄── SCORE_UPDATED ─────────►  │
+     │    (scoreA, scoreB)          │    (scoreA, scoreB)          │
+     │                              │                              │
+     │    ◄── ROUND_ENDED ─────────►│◄── ROUND_ENDED ───────────►  │
+     │    (après tour 2)            │    (après tour 2)            │
+     ▼                              ▼                              ▼
+```
+
+> **Note SMASH B** : Le diagramme est identique mais sans les phases `SMASH_CONCERTATION` et `SMASH_TOP`. Le tour démarre directement avec 3s pour poser la question.
+
+## **📡 Référence des événements WebSocket SMASH**
+
+| Événement | Payload | Description |
+|-----------|---------|-------------|
+| `SMASH_TURN_START` | `{turnNumber, attackerTeam, defenderTeam, roundType, hasConcertation}` | Début d'un tour |
+| `SMASH_CONCERTATION` | `{}` | Phase concertation démarrée (SMASH A) |
+| `SMASH_TOP` | `{}` | Bouton TOP confirmé, chrono 3s |
+| `SMASH_QUESTION_SUBMIT` | `{questionText}` | Question soumise par l'attaquant |
+| `SMASH_VALIDATE_PROMPT` | `{question, timeoutMs: 3000}` | Demande de validation au défenseur |
+| `SMASH_QUESTION_VALID` | `{}` | Question acceptée |
+| `SMASH_QUESTION_INVALID` | `{reason?, pointsAwarded: 10}` | Question rejetée (+10 défenseur) |
+| `SMASH_ANSWER_PROMPT` | `{question, timeoutMs: 10000}` | Demande de réponse au défenseur |
+| `SMASH_ANSWER_SUBMIT` | `{answer}` | Réponse soumise |
+| `SMASH_RESULT_PROMPT` | `{question, answer}` | Demande validation à l'attaquant |
+| `SMASH_ANSWER_CORRECT` | `{pointsAwarded: 10}` | Réponse validée correcte |
+| `SMASH_ANSWER_INCORRECT` | `{}` | Réponse incorrecte (0 pts) |
+| `SMASH_TIMEOUT` | `{phase, pointsAwarded?}` | Timeout (question, validation, réponse) |
+| `SCORE_UPDATED` | `{scoreA, scoreB}` | Mise à jour des scores |
+| `ROUND_ENDED` | `{finalScoreA, finalScoreB, winner}` | Fin de la manche SMASH |
+
+## **🔌 Endpoints WebSocket**
+
+| Action | Destination STOMP |
+|--------|-------------------|
+| Envoyer TOP | `/app/match/{matchId}/smash/top` |
+| Soumettre question | `/app/match/{matchId}/smash/question` |
+| Valider/invalider question | `/app/match/{matchId}/smash/validate` |
+| Soumettre réponse | `/app/match/{matchId}/smash/answer` |
+| Valider résultat | `/app/match/{matchId}/smash/result` |
+
+---
+
 # **PANIER (VERSION ÉQUIPE)**
 
 ### **🎯 Objectif**

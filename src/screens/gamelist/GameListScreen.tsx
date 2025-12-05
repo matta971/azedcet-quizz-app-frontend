@@ -9,6 +9,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -287,6 +288,7 @@ const GAMES_BY_CATEGORY: Record<string, { title: string; icon: string; games: Ga
 };
 
 export function GameListScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<GameListRouteProp>();
   const { categoryId } = route.params;
@@ -304,7 +306,7 @@ export function GameListScreen() {
 
   const getTypeLabel = (type: GameType) => {
     switch (type) {
-      case 'A': return 'EQUIPE';
+      case 'A': return t('games.team').toUpperCase();
       case 'B': return '1v1';
       case 'C': return 'SOLO';
     }
@@ -327,7 +329,7 @@ export function GameListScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backText}>← Retour</Text>
+            <Text style={styles.backText}>← {t('common.back')}</Text>
           </TouchableOpacity>
           <View style={styles.titleContainer}>
             <Text style={styles.categoryIcon}>{category.icon}</Text>
@@ -340,7 +342,7 @@ export function GameListScreen() {
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.subtitle}>Selectionnez un jeu</Text>
+          <Text style={styles.subtitle}>{t('games.selectMode')}</Text>
 
           {category.games.map((game) => (
             <TouchableOpacity
@@ -361,17 +363,17 @@ export function GameListScreen() {
 
               <View style={styles.gameMeta}>
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Joueurs</Text>
+                  <Text style={styles.metaLabel}>{t('games.players')}</Text>
                   <Text style={styles.metaValue}>{game.players}</Text>
                 </View>
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Duree</Text>
+                  <Text style={styles.metaLabel}>{t('games.duration')}</Text>
                   <Text style={styles.metaValue}>{game.duration}</Text>
                 </View>
               </View>
 
               <View style={styles.playButton}>
-                <Text style={styles.playButtonText}>VOIR LES REGLES</Text>
+                <Text style={styles.playButtonText}>{t('games.viewRules')}</Text>
               </View>
             </TouchableOpacity>
           ))}

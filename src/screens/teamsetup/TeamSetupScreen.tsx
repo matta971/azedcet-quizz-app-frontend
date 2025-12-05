@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../../navigation/types';
 import { GAMES_BY_CATEGORY } from '../gamelist/GameListScreen';
 
@@ -20,6 +21,7 @@ type TeamSetupRouteProp = RouteProp<RootStackParamList, 'TeamSetup'>;
 type SetupMode = 'choice' | 'create' | 'join';
 
 export function TeamSetupScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<TeamSetupRouteProp>();
   const { gameId, categoryId } = route.params;
@@ -87,18 +89,18 @@ export function TeamSetupScreen() {
   };
 
   const getWorkflowSteps = () => [
-    { step: 1, label: 'Regles', active: false, completed: true },
-    { step: 2, label: 'Creer/Rejoindre equipe', active: true },
-    { step: 3, label: 'Choisir adversaire', active: false },
-    { step: 4, label: 'Lobby', active: false },
-    { step: 5, label: 'Match', active: false },
+    { step: 1, label: t('teamSetup.workflow.rules'), active: false, completed: true },
+    { step: 2, label: t('teamSetup.workflow.createJoin'), active: true },
+    { step: 3, label: t('teamSetup.workflow.chooseOpponent'), active: false },
+    { step: 4, label: t('teamSetup.workflow.lobby'), active: false },
+    { step: 5, label: t('teamSetup.workflow.match'), active: false },
   ];
 
   const renderChoice = () => (
     <View style={styles.choiceContainer}>
-      <Text style={styles.choiceTitle}>CONSTITUER VOTRE EQUIPE</Text>
+      <Text style={styles.choiceTitle}>{t('teamSetup.buildTeam')}</Text>
       <Text style={styles.choiceSubtitle}>
-        Creez une nouvelle equipe ou rejoignez une equipe existante
+        {t('teamSetup.buildTeamSubtitle')}
       </Text>
 
       <TouchableOpacity
@@ -109,9 +111,9 @@ export function TeamSetupScreen() {
         <View style={styles.choiceButtonContent}>
           <Text style={styles.choiceButtonIcon}>+</Text>
           <View style={styles.choiceButtonText}>
-            <Text style={styles.choiceButtonTitle}>CREER UNE EQUIPE</Text>
+            <Text style={styles.choiceButtonTitle}>{t('teamSetup.createTeam')}</Text>
             <Text style={styles.choiceButtonDesc}>
-              Devenez capitaine et invitez des joueurs
+              {t('teamSetup.becomeCaptain')}
             </Text>
           </View>
         </View>
@@ -125,9 +127,9 @@ export function TeamSetupScreen() {
         <View style={styles.choiceButtonContent}>
           <Text style={styles.choiceButtonIcon}>→</Text>
           <View style={styles.choiceButtonText}>
-            <Text style={styles.choiceButtonTitle}>REJOINDRE UNE EQUIPE</Text>
+            <Text style={styles.choiceButtonTitle}>{t('teamSetup.joinTeam')}</Text>
             <Text style={styles.choiceButtonDesc}>
-              Entrez le code d'invitation de votre capitaine
+              {t('teamSetup.enterInviteCode')}
             </Text>
           </View>
         </View>
@@ -137,18 +139,18 @@ export function TeamSetupScreen() {
 
   const renderCreateForm = () => (
     <View style={styles.formContainer}>
-      <Text style={styles.formTitle}>CREER UNE EQUIPE</Text>
+      <Text style={styles.formTitle}>{t('teamSetup.createTeam')}</Text>
       <Text style={styles.formSubtitle}>
-        Configurez votre equipe pour le match
+        {t('teamSetup.title')}
       </Text>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>NOM DE L'EQUIPE</Text>
+        <Text style={styles.inputLabel}>{t('teamSetup.teamName')}</Text>
         <TextInput
           style={styles.textInput}
           value={teamName}
           onChangeText={setTeamName}
-          placeholder="Ex: Les Champions"
+          placeholder={t('teamSetup.teamNamePlaceholder')}
           placeholderTextColor="#666"
           maxLength={20}
           autoCapitalize="words"
@@ -156,9 +158,9 @@ export function TeamSetupScreen() {
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>JOUEURS PAR EQUIPE</Text>
+        <Text style={styles.inputLabel}>{t('teamSetup.playersPerTeamLabel')}</Text>
         <Text style={styles.inputHint}>
-          Les deux equipes devront atteindre ce nombre pour demarrer
+          {t('teamSetup.playersPerTeamHint')}
         </Text>
         <View style={styles.teamSizeSelector}>
           {[1, 2, 3, 4, 5].map((size) => (
@@ -191,16 +193,15 @@ export function TeamSetupScreen() {
           {isRanked && <Text style={styles.checkmark}>✓</Text>}
         </View>
         <View>
-          <Text style={styles.rankedLabel}>Match classe (Ranked)</Text>
-          <Text style={styles.rankedHint}>Affecte votre classement</Text>
+          <Text style={styles.rankedLabel}>{t('teamSetup.rankedToggle')}</Text>
+          <Text style={styles.rankedHint}>{t('teamSetup.rankedHint')}</Text>
         </View>
       </TouchableOpacity>
 
       <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>INFORMATION</Text>
+        <Text style={styles.infoTitle}>{t('teamSetup.information')}</Text>
         <Text style={styles.infoText}>
-          Une fois l'equipe creee, vous recevrez un code d'invitation a partager avec vos coequipiers.
-          Le match ne pourra demarrer que lorsque les deux equipes auront {maxPlayersPerTeam} joueur{maxPlayersPerTeam > 1 ? 's' : ''} chacune.
+          {t('teamSetup.createTeamInfo', { count: maxPlayersPerTeam })}
         </Text>
       </View>
 
@@ -214,7 +215,7 @@ export function TeamSetupScreen() {
           <ActivityIndicator color="#1a1a2e" />
         ) : (
           <Text style={styles.actionButtonText}>
-            CREER L'EQUIPE ({maxPlayersPerTeam}v{maxPlayersPerTeam})
+            {t('teamSetup.createTeamButton', { size: `${maxPlayersPerTeam}v${maxPlayersPerTeam}` })}
           </Text>
         )}
       </TouchableOpacity>
@@ -223,18 +224,18 @@ export function TeamSetupScreen() {
 
   const renderJoinForm = () => (
     <View style={styles.formContainer}>
-      <Text style={styles.formTitle}>REJOINDRE UNE EQUIPE</Text>
+      <Text style={styles.formTitle}>{t('teamSetup.joinTeamTitle')}</Text>
       <Text style={styles.formSubtitle}>
-        Entrez le code d'invitation recu de votre capitaine
+        {t('teamSetup.joinTeamSubtitle')}
       </Text>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>CODE D'INVITATION</Text>
+        <Text style={styles.inputLabel}>{t('teamSetup.inviteCode')}</Text>
         <TextInput
           style={styles.textInput}
           value={teamCode}
           onChangeText={setTeamCode}
-          placeholder="Ex: ABC123"
+          placeholder={t('teamSetup.codePlaceholder')}
           placeholderTextColor="#666"
           maxLength={10}
           autoCapitalize="characters"
@@ -242,9 +243,9 @@ export function TeamSetupScreen() {
       </View>
 
       <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>INFORMATION</Text>
+        <Text style={styles.infoTitle}>{t('teamSetup.information')}</Text>
         <Text style={styles.infoText}>
-          Demandez le code d'invitation a votre capitaine d'equipe pour pouvoir rejoindre la partie.
+          {t('teamSetup.joinTeamInfo')}
         </Text>
       </View>
 
@@ -257,7 +258,7 @@ export function TeamSetupScreen() {
         {isLoading ? (
           <ActivityIndicator color="#1a1a2e" />
         ) : (
-          <Text style={styles.actionButtonText}>REJOINDRE</Text>
+          <Text style={styles.actionButtonText}>{t('teamSetup.joinButton')}</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -274,7 +275,7 @@ export function TeamSetupScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backText}>← Retour</Text>
+            <Text style={styles.backText}>← {t('common.back')}</Text>
           </TouchableOpacity>
           {game && (
             <Text style={styles.gameName}>{game.name}</Text>
@@ -288,7 +289,7 @@ export function TeamSetupScreen() {
         >
           {/* Workflow Steps */}
           <View style={styles.workflowSection}>
-            <Text style={styles.sectionTitle}>PARCOURS</Text>
+            <Text style={styles.sectionTitle}>{t('teamSetup.workflow.journey')}</Text>
             <View style={styles.workflowSteps}>
               {workflowSteps.map((step, index) => (
                 <View key={step.step} style={styles.stepContainer}>

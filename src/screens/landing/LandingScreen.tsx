@@ -5,11 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
+import { LogoHeader } from '../../components';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,19 +24,15 @@ export function LandingScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={['#0a0a1a', '#1a1a2e', '#0f3460']}
-        style={styles.gradient}
-      >
+    <ImageBackground
+      source={require('../../../assets/background-home.png')}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay}>
         {/* Header with Logo */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logoIcon}>
-              <Text style={styles.logoIconText}>MS</Text>
-            </View>
-            <Text style={styles.logoText}>MINDSOCCER</Text>
-          </View>
+          <LogoHeader size="medium" />
         </View>
 
         {/* Main Content */}
@@ -64,8 +61,8 @@ export function LandingScreen() {
             <Text style={styles.featureText}>MATCH IA</Text>
           </View>
         </View>
-      </LinearGradient>
-    </View>
+      </View>
+    </ImageBackground>
   );
 }
 
@@ -73,36 +70,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  gradient: {
+  overlay: {
     flex: 1,
+    backgroundColor: 'rgba(10, 10, 26, 0.7)',
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#00ff88',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  logoIconText: {
-    color: '#1a1a2e',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  logoText: {
-    color: '#00ff88',
-    fontSize: 20,
-    fontWeight: 'bold',
-    letterSpacing: 2,
   },
   content: {
     flex: 1,

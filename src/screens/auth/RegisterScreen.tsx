@@ -12,6 +12,7 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores';
 import { AuthScreenProps } from '../../navigation/types';
 import { Language } from '../../types';
@@ -51,6 +52,7 @@ const COUNTRIES: { code: string; name: string }[] = [
 ];
 
 export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
+  const { t } = useTranslation();
   const [handle, setHandle] = useState('');
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -79,22 +81,22 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
     setLocalError(null);
 
     if (!handle.trim() || !email.trim() || !password.trim()) {
-      setLocalError('Pseudo, email et mot de passe sont obligatoires');
+      setLocalError(t('auth.errors.requiredFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setLocalError('Les mots de passe ne correspondent pas');
+      setLocalError(t('auth.errors.passwordMismatch'));
       return;
     }
 
     if (password.length < 8) {
-      setLocalError('Le mot de passe doit contenir au moins 8 caractères');
+      setLocalError(t('auth.errors.passwordTooShort'));
       return;
     }
 
     if (birthDate && !validateBirthDate(birthDate)) {
-      setLocalError('Format de date invalide (AAAA-MM-JJ)');
+      setLocalError(t('auth.errors.invalidDateFormat'));
       return;
     }
 
@@ -112,12 +114,12 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
 
   const getCountryName = () => {
     const found = COUNTRIES.find((c) => c.code === country);
-    return found ? found.name : 'Sélectionner un pays';
+    return found ? t(`countries.${found.code}`) : t('auth.selectCountry');
   };
 
   const getLanguageName = () => {
     const found = LANGUAGES.find((l) => l.code === preferredLanguage);
-    return found ? found.name : 'Sélectionner une langue';
+    return found ? t(`languages.${found.code}`) : t('auth.selectLanguage');
   };
 
   const handleNavigateToLogin = () => {
@@ -134,8 +136,8 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Text style={styles.title}>MindSoccer</Text>
-          <Text style={styles.subtitle}>Inscription</Text>
+          <Text style={styles.title}>{t('app.name')}</Text>
+          <Text style={styles.subtitle}>{t('auth.register')}</Text>
 
           {displayError && (
             <View style={styles.errorContainer}>
@@ -145,7 +147,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
 
           <TextInput
             style={styles.input}
-            placeholder="Pseudo"
+            placeholder={t('auth.handle')}
             placeholderTextColor="#666"
             value={handle}
             onChangeText={setHandle}
@@ -155,7 +157,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('auth.email')}
             placeholderTextColor="#666"
             value={email}
             onChangeText={setEmail}
@@ -164,12 +166,12 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
             keyboardType="email-address"
           />
 
-          <Text style={styles.sectionLabel}>Informations personnelles (optionnel)</Text>
+          <Text style={styles.sectionLabel}>{t('auth.personalInfo')}</Text>
 
           <View style={styles.row}>
             <TextInput
               style={[styles.input, styles.halfInput]}
-              placeholder="Prénom"
+              placeholder={t('auth.firstName')}
               placeholderTextColor="#666"
               value={firstName}
               onChangeText={setFirstName}
@@ -177,7 +179,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
             />
             <TextInput
               style={[styles.input, styles.halfInput]}
-              placeholder="Nom"
+              placeholder={t('auth.lastName')}
               placeholderTextColor="#666"
               value={lastName}
               onChangeText={setLastName}
@@ -187,7 +189,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
 
           <TextInput
             style={styles.input}
-            placeholder="Date de naissance (AAAA-MM-JJ)"
+            placeholder={t('auth.birthDate')}
             placeholderTextColor="#666"
             value={birthDate}
             onChangeText={setBirthDate}
@@ -213,11 +215,11 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
             <Text style={styles.pickerArrow}>▼</Text>
           </TouchableOpacity>
 
-          <Text style={styles.sectionLabel}>Sécurité</Text>
+          <Text style={styles.sectionLabel}>{t('auth.security')}</Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Mot de passe"
+            placeholder={t('auth.password')}
             placeholderTextColor="#666"
             value={password}
             onChangeText={setPassword}
@@ -226,7 +228,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
 
           <TextInput
             style={styles.input}
-            placeholder="Confirmer le mot de passe"
+            placeholder={t('auth.confirmPassword')}
             placeholderTextColor="#666"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -241,12 +243,12 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>S'inscrire</Text>
+              <Text style={styles.buttonText}>{t('auth.registerButton')}</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkButton} onPress={handleNavigateToLogin}>
-            <Text style={styles.linkText}>Déjà un compte ? Se connecter</Text>
+            <Text style={styles.linkText}>{t('auth.hasAccount')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -260,7 +262,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sélectionner un pays</Text>
+            <Text style={styles.modalTitle}>{t('auth.selectCountry')}</Text>
             <FlatList
               data={COUNTRIES}
               keyExtractor={(item) => item.code}
@@ -281,7 +283,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                       country === item.code && styles.modalItemTextSelected,
                     ]}
                   >
-                    {item.name}
+                    {t(`countries.${item.code}`)}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -290,7 +292,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
               style={styles.modalCloseButton}
               onPress={() => setShowCountryPicker(false)}
             >
-              <Text style={styles.modalCloseText}>Fermer</Text>
+              <Text style={styles.modalCloseText}>{t('common.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -305,7 +307,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Langue préférée</Text>
+            <Text style={styles.modalTitle}>{t('auth.preferredLanguage')}</Text>
             <FlatList
               data={LANGUAGES}
               keyExtractor={(item) => item.code}
@@ -326,7 +328,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                       preferredLanguage === item.code && styles.modalItemTextSelected,
                     ]}
                   >
-                    {item.name}
+                    {t(`languages.${item.code}`)}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -335,7 +337,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
               style={styles.modalCloseButton}
               onPress={() => setShowLanguagePicker(false)}
             >
-              <Text style={styles.modalCloseText}>Fermer</Text>
+              <Text style={styles.modalCloseText}>{t('common.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>

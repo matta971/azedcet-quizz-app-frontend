@@ -8,6 +8,7 @@ import {
   FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { LogoHeader } from '../../components';
 
 type FilterType = 'monde' | 'pays' | 'equipes' | 'joueurs' | 'amis';
 
@@ -49,7 +50,7 @@ export function LeaderboardScreen() {
     <>
       {/* Nav Bar */}
       <View style={styles.navBar}>
-        <Text style={styles.logoText}>MINDSOCCER</Text>
+        <LogoHeader size="small" />
         <View style={styles.navLinks}>
           <Text style={styles.navLink}>ACCUEIL</Text>
           <Text style={styles.navLink}>MODES</Text>
@@ -178,12 +179,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
-  },
-  logoText: {
-    color: '#00ff88',
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1,
   },
   navLinks: {
     flexDirection: 'row',

@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores';
 import { RootStackParamList } from '../../navigation/types';
 
@@ -23,6 +24,7 @@ interface TeamInfo {
 }
 
 export function ProfileScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user, logout } = useAuthStore();
 
@@ -70,7 +72,7 @@ export function ProfileScreen() {
       </View>
       <Text style={styles.teamName}>{team.name}</Text>
       <Text style={styles.teamRole}>{team.role}</Text>
-      <Text style={styles.teamLevel}>Niveau {team.level}</Text>
+      <Text style={styles.teamLevel}>{t('profile.level')} {team.level}</Text>
     </TouchableOpacity>
   );
 
@@ -86,7 +88,7 @@ export function ProfileScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <Text style={styles.headerTitle}>MINDSOCCER</Text>
+          <Text style={styles.headerTitle}>{t('app.name').toUpperCase()}</Text>
 
           {/* Profile Card */}
           <View style={styles.profileCard}>
@@ -103,9 +105,9 @@ export function ProfileScreen() {
               <View style={styles.nameSection}>
                 <Text style={styles.playerName}>{profileData.handle}</Text>
                 <View style={styles.levelBadge}>
-                  <Text style={styles.levelText}>Niveau {profileData.level}</Text>
+                  <Text style={styles.levelText}>{t('profile.level')} {profileData.level}</Text>
                   <View style={styles.seasonBadge}>
-                    <Text style={styles.seasonText}>Saison {profileData.season}</Text>
+                    <Text style={styles.seasonText}>{t('profile.season')} {profileData.season}</Text>
                   </View>
                 </View>
               </View>
@@ -114,13 +116,13 @@ export function ProfileScreen() {
             {/* Scores */}
             <View style={styles.scoresSection}>
               <View style={styles.scoreBox}>
-                <Text style={styles.scoreLabel}>SCORE GLOBAL</Text>
+                <Text style={styles.scoreLabel}>{t('profile.globalScore')}</Text>
                 <Text style={styles.scoreValue}>
                   {profileData.scoreGlobal.toLocaleString()}
                 </Text>
               </View>
               <View style={styles.scoreBox}>
-                <Text style={styles.scoreLabel}>SCORE SAISON</Text>
+                <Text style={styles.scoreLabel}>{t('profile.seasonScore')}</Text>
                 <Text style={[styles.scoreValue, styles.scoreValueYellow]}>
                   {profileData.scoreSaison.toLocaleString()}
                 </Text>
@@ -129,9 +131,9 @@ export function ProfileScreen() {
 
             {/* Stats Row */}
             <View style={styles.statsRow}>
-              <Text style={styles.statText}>Winrate</Text>
-              <Text style={styles.statValue}>{profileData.winrate}s</Text>
-              <Text style={styles.statText}>Favoref modes</Text>
+              <Text style={styles.statText}>{t('profile.winrate')}</Text>
+              <Text style={styles.statValue}>{profileData.winrate}%</Text>
+              <Text style={styles.statText}>{t('profile.favoriteModes')}</Text>
             </View>
 
             {/* Teams Section */}
@@ -170,13 +172,13 @@ export function ProfileScreen() {
                 style={styles.actionButton}
                 onPress={handleEditProfile}
               >
-                <Text style={styles.actionButtonText}>MODIFIER PROFIL</Text>
+                <Text style={styles.actionButtonText}>{t('profile.editProfile')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={handleChangeAvatar}
               >
-                <Text style={styles.actionButtonText}>CHANGER AVATAR</Text>
+                <Text style={styles.actionButtonText}>{t('profile.changeAvatar')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -185,7 +187,7 @@ export function ProfileScreen() {
               style={styles.logoutButton}
               onPress={handleLogout}
             >
-              <Text style={styles.logoutButtonText}>DECONNEXION</Text>
+              <Text style={styles.logoutButtonText}>{t('auth.logout').toUpperCase()}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

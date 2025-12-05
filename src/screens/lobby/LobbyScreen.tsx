@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
 import { useMatchStore, useAuthStore, useGameStore } from '../../stores';
 import { RootStackParamList, MainTabParamList } from '../../navigation/types';
 import { MatchResponse, TeamSide } from '../../types';
@@ -24,6 +25,7 @@ type NavigationProp = CompositeNavigationProp<
 >;
 
 export function LobbyScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const {
@@ -94,25 +96,25 @@ export function LobbyScreen() {
         <View style={styles.matchHeader}>
           <Text style={styles.matchCode}>{item.code}</Text>
           <View style={styles.matchBadges}>
-            {item.ranked && <Text style={styles.matchRanked}>RANKED</Text>}
+            {item.ranked && <Text style={styles.matchRanked}>{t('lobby.ranked').toUpperCase()}</Text>}
             {item.duo && <Text style={styles.matchDuo}>1v1</Text>}
           </View>
         </View>
         <View style={styles.matchInfo}>
           <Text style={styles.matchPlayers}>
-            {totalPlayers}/{maxPlayers} joueurs ({item.maxPlayersPerTeam}v{item.maxPlayersPerTeam})
+            {totalPlayers}/{maxPlayers} {t('games.players')} ({item.maxPlayersPerTeam}v{item.maxPlayersPerTeam})
           </Text>
         </View>
         <View style={styles.teamsPreview}>
           <Text style={styles.teamText}>
-            A: {item.teamA.playerCount}/{item.maxPlayersPerTeam} {item.teamA.isFull ? '✓' : ''} - {item.teamA.players.map((p) => p.handle).join(', ') || 'En attente...'}
+            A: {item.teamA.playerCount}/{item.maxPlayersPerTeam} {item.teamA.isFull ? '✓' : ''} - {item.teamA.players.map((p) => p.handle).join(', ') || t('match.waitingForPlayers')}
           </Text>
           <Text style={styles.teamText}>
-            B: {item.teamB.playerCount}/{item.maxPlayersPerTeam} {item.teamB.isFull ? '✓' : ''} - {item.teamB.players.map((p) => p.handle).join(', ') || 'En attente...'}
+            B: {item.teamB.playerCount}/{item.maxPlayersPerTeam} {item.teamB.isFull ? '✓' : ''} - {item.teamB.players.map((p) => p.handle).join(', ') || t('match.waitingForPlayers')}
           </Text>
         </View>
         {item.canStart && (
-          <Text style={styles.matchReady}>Prêt à démarrer</Text>
+          <Text style={styles.matchReady}>{t('match.canStart')}</Text>
         )}
       </TouchableOpacity>
     );
@@ -121,8 +123,8 @@ export function LobbyScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Salut, {user?.handle}!</Text>
-        <Text style={styles.title}>Rejoindre</Text>
+        <Text style={styles.greeting}>{t('home.welcome')}, {user?.handle}!</Text>
+        <Text style={styles.title}>{t('lobby.title')}</Text>
       </View>
 
       <View style={styles.actions}>
@@ -130,13 +132,13 @@ export function LobbyScreen() {
           style={styles.actionButton}
           onPress={handleCreateMatch}
         >
-          <Text style={styles.actionButtonText}>Créer un match</Text>
+          <Text style={styles.actionButtonText}>{t('lobby.createMatch')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.actionButtonSecondary]}
           onPress={() => setShowJoinModal(true)}
         >
-          <Text style={styles.actionButtonTextSecondary}>Rejoindre par code</Text>
+          <Text style={styles.actionButtonTextSecondary}>{t('lobby.joinByCode')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -147,7 +149,7 @@ export function LobbyScreen() {
       )}
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Matchs en attente</Text>
+        <Text style={styles.sectionTitle}>{t('lobby.waitingMatches')}</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
@@ -170,8 +172,8 @@ export function LobbyScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Aucun match disponible</Text>
-            <Text style={styles.emptySubtext}>Créez le vôtre !</Text>
+            <Text style={styles.emptyText}>{t('lobby.noMatches')}</Text>
+            <Text style={styles.emptySubtext}>{t('lobby.createMatch')}!</Text>
           </View>
         }
         contentContainerStyle={styles.listContent}
@@ -186,10 +188,10 @@ export function LobbyScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Rejoindre par code</Text>
+            <Text style={styles.modalTitle}>{t('lobby.joinByCode')}</Text>
             <TextInput
               style={styles.codeInput}
-              placeholder="CODE"
+              placeholder={t('lobby.matchCode').toUpperCase()}
               placeholderTextColor="#666"
               value={joinCode}
               onChangeText={setJoinCode}
@@ -204,7 +206,7 @@ export function LobbyScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#1a1a2e" />
               ) : (
-                <Text style={styles.modalButtonText}>Rejoindre</Text>
+                <Text style={styles.modalButtonText}>{t('lobby.joinMatch')}</Text>
               )}
             </TouchableOpacity>
             <TouchableOpacity
@@ -214,7 +216,7 @@ export function LobbyScreen() {
                 setJoinCode('');
               }}
             >
-              <Text style={styles.modalCancelText}>Annuler</Text>
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

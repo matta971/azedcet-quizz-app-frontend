@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { useSmashStore } from '../../stores/smashStore';
 import { RootStackParamList } from '../../navigation/types';
 import { TeamSide, SmashQuestionOption } from '../../types';
@@ -24,6 +25,7 @@ type RouteProps = RouteProp<RootStackParamList, 'SmashGame'>;
 const { width } = Dimensions.get('window');
 
 export function SmashGameScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { matchId, myTeam } = route.params;
@@ -149,22 +151,22 @@ export function SmashGameScreen() {
     if (attackerTeam === team) {
       switch (currentPhase) {
         case 'CONCERTATION':
-          return 'SE CONCERTE';
+          return t('game.status.concertation');
         case 'QUESTION':
-          return 'POSE UNE QUESTION';
+          return t('game.status.askQuestion');
         case 'RESULT':
-          return 'VALIDE LA REPONSE';
+          return t('game.status.validateResult');
         default:
-          return 'ATTAQUE';
+          return t('game.status.attack');
       }
     } else {
       switch (currentPhase) {
         case 'VALIDATE':
-          return 'VALIDE LA QUESTION';
+          return t('game.status.validateQuestion');
         case 'ANSWER':
-          return 'REPOND';
+          return t('game.status.respond');
         default:
-          return 'DEFEND';
+          return t('game.status.defend');
       }
     }
   };
@@ -194,10 +196,10 @@ export function SmashGameScreen() {
       <View style={styles.teamsRow}>
         {/* Team A Card */}
         <View style={[styles.teamCard, attackerTeam === 'A' ? styles.teamCardAttacker : styles.teamCardDefender]}>
-          <Text style={styles.teamCardLabel}>EQUIPE A</Text>
+          <Text style={styles.teamCardLabel}>{t('game.teamA')}</Text>
           <Text style={styles.teamCardStatus}>{getTeamStatus('A')}</Text>
           <Text style={styles.teamCardScore}>{scoreA}</Text>
-          {myTeam === 'A' && <Text style={styles.myTeamIndicator}>(Vous)</Text>}
+          {myTeam === 'A' && <Text style={styles.myTeamIndicator}>({t('match.you')})</Text>}
         </View>
 
         {/* TOP Button in the middle */}
@@ -215,10 +217,10 @@ export function SmashGameScreen() {
 
         {/* Team B Card */}
         <View style={[styles.teamCard, attackerTeam === 'B' ? styles.teamCardAttacker : styles.teamCardDefender]}>
-          <Text style={styles.teamCardLabel}>EQUIPE B</Text>
+          <Text style={styles.teamCardLabel}>{t('game.teamB')}</Text>
           <Text style={styles.teamCardStatus}>{getTeamStatus('B')}</Text>
           <Text style={styles.teamCardScore}>{scoreB}</Text>
-          {myTeam === 'B' && <Text style={styles.myTeamIndicator}>(Vous)</Text>}
+          {myTeam === 'B' && <Text style={styles.myTeamIndicator}>({t('match.you')})</Text>}
         </View>
       </View>
     );
@@ -227,21 +229,21 @@ export function SmashGameScreen() {
   // Render question mode selection (SMASH A only)
   const renderQuestionModeSelection = () => (
     <View style={styles.modeSelectionContainer}>
-      <Text style={styles.modeSelectionTitle}>Comment voulez-vous poser votre question ?</Text>
+      <Text style={styles.modeSelectionTitle}>{t('game.questionMode.title')}</Text>
       <View style={styles.modeButtons}>
         <TouchableOpacity
           style={styles.modeButton}
           onPress={() => handleSelectQuestionMode('custom')}
         >
-          <Text style={styles.modeButtonText}>Ecrire ma question</Text>
-          <Text style={styles.modeButtonSubtext}>Posez votre propre question</Text>
+          <Text style={styles.modeButtonText}>{t('game.questionMode.custom')}</Text>
+          <Text style={styles.modeButtonSubtext}>{t('game.questionMode.customDesc')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.modeButton}
           onPress={() => handleSelectQuestionMode('predefined')}
         >
-          <Text style={styles.modeButtonText}>Choisir une question</Text>
-          <Text style={styles.modeButtonSubtext}>Parmi 10 questions aleatoires</Text>
+          <Text style={styles.modeButtonText}>{t('game.questionMode.predefined')}</Text>
+          <Text style={styles.modeButtonSubtext}>{t('game.questionMode.predefinedDesc')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -253,20 +255,20 @@ export function SmashGameScreen() {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00ffff" />
-          <Text style={styles.loadingText}>Chargement des questions...</Text>
+          <Text style={styles.loadingText}>{t('game.loadingQuestions')}</Text>
         </View>
       );
     }
 
     return (
       <View style={styles.proposedQuestionsContainer}>
-        <Text style={styles.proposedQuestionsTitle}>Choisissez une question:</Text>
+        <Text style={styles.proposedQuestionsTitle}>{t('game.chooseQuestion')}</Text>
         {roundType === 'SMASH_A' && (
           <TouchableOpacity
             style={styles.backToModeButton}
             onPress={() => setQuestionMode(null)}
           >
-            <Text style={styles.backToModeButtonText}>← Retour au choix</Text>
+            <Text style={styles.backToModeButtonText}>{t('game.backToChoice')}</Text>
           </TouchableOpacity>
         )}
         <FlatList
@@ -289,7 +291,7 @@ export function SmashGameScreen() {
               <Text style={styles.questionOptionText}>{item.text}</Text>
               {selectedQuestion?.id === item.id && (
                 <View style={styles.expectedAnswerContainer}>
-                  <Text style={styles.expectedAnswerLabel}>Reponse attendue:</Text>
+                  <Text style={styles.expectedAnswerLabel}>{t('game.expectedAnswer')}</Text>
                   <Text style={styles.expectedAnswerText}>{item.answer}</Text>
                 </View>
               )}
@@ -300,7 +302,7 @@ export function SmashGameScreen() {
         />
         {selectedQuestion && (
           <TouchableOpacity style={styles.confirmQuestionButton} onPress={handleTop}>
-            <Text style={styles.confirmQuestionButtonText}>Lancer le TOP avec cette question</Text>
+            <Text style={styles.confirmQuestionButtonText}>{t('game.launchTop')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -332,11 +334,11 @@ export function SmashGameScreen() {
             style={styles.backToModeButton}
             onPress={() => setQuestionMode(null)}
           >
-            <Text style={styles.backToModeButtonText}>← Retour au choix</Text>
+            <Text style={styles.backToModeButtonText}>{t('game.backToChoice')}</Text>
           </TouchableOpacity>
           <TextInput
             style={styles.questionInput}
-            placeholder="Entrer votre question"
+            placeholder={t('game.enterQuestion')}
             placeholderTextColor="#666"
             value={questionInput}
             onChangeText={setQuestionInput}
@@ -347,7 +349,7 @@ export function SmashGameScreen() {
             onPress={handleTop}
             disabled={!questionInput.trim()}
           >
-            <Text style={styles.launchTopButtonText}>Lancer le Top</Text>
+            <Text style={styles.launchTopButtonText}>{t('game.launchTopButton')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -360,18 +362,18 @@ export function SmashGameScreen() {
         return (
           <View style={styles.inputArea}>
             <View style={styles.questionDisplay}>
-              <Text style={styles.questionDisplayLabel}>Votre question:</Text>
+              <Text style={styles.questionDisplayLabel}>{t('game.yourQuestion')}</Text>
               <Text style={styles.questionDisplayText}>{selectedQuestion.text}</Text>
             </View>
             <View style={styles.expectedAnswerDisplay}>
-              <Text style={styles.expectedAnswerLabel}>Reponse attendue:</Text>
+              <Text style={styles.expectedAnswerLabel}>{t('game.expectedAnswer')}</Text>
               <Text style={styles.expectedAnswerText}>{selectedQuestion.answer}</Text>
             </View>
             <TouchableOpacity
               style={styles.submitButton}
               onPress={handleSendSelectedQuestion}
             >
-              <Text style={styles.submitButtonText}>Envoyer la question</Text>
+              <Text style={styles.submitButtonText}>{t('game.sendQuestion')}</Text>
             </TouchableOpacity>
           </View>
         );
@@ -382,7 +384,7 @@ export function SmashGameScreen() {
         <View style={styles.inputArea}>
           <TextInput
             style={styles.questionInput}
-            placeholder="Entrer la question"
+            placeholder={t('game.enterQuestion')}
             placeholderTextColor="#666"
             value={questionInput}
             onChangeText={setQuestionInput}
@@ -393,7 +395,7 @@ export function SmashGameScreen() {
             onPress={handleSubmitQuestion}
             disabled={!questionInput.trim()}
           >
-            <Text style={styles.submitButtonText}>Envoyer la question</Text>
+            <Text style={styles.submitButtonText}>{t('game.sendQuestion')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -404,7 +406,7 @@ export function SmashGameScreen() {
       return (
         <View style={styles.inputArea}>
           <View style={styles.questionDisplay}>
-            <Text style={styles.questionDisplayLabel}>Question posee:</Text>
+            <Text style={styles.questionDisplayLabel}>{t('game.questionAsked')}</Text>
             <Text style={styles.questionDisplayText}>{currentQuestion}</Text>
           </View>
           <View style={styles.validationButtons}>
@@ -412,13 +414,13 @@ export function SmashGameScreen() {
               style={[styles.validationButton, styles.validButton]}
               onPress={() => handleValidate(true)}
             >
-              <Text style={styles.validationButtonText}>Valide</Text>
+              <Text style={styles.validationButtonText}>{t('game.valid')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.validationButton, styles.invalidButton]}
               onPress={() => handleValidate(false)}
             >
-              <Text style={styles.validationButtonText}>Invalide</Text>
+              <Text style={styles.validationButtonText}>{t('game.invalid')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -430,12 +432,12 @@ export function SmashGameScreen() {
       return (
         <View style={styles.inputArea}>
           <View style={styles.questionDisplay}>
-            <Text style={styles.questionDisplayLabel}>Question:</Text>
+            <Text style={styles.questionDisplayLabel}>{t('game.question')}:</Text>
             <Text style={styles.questionDisplayText}>{currentQuestion}</Text>
           </View>
           <TextInput
             style={styles.questionInput}
-            placeholder="Votre reponse..."
+            placeholder={t('game.yourResponse')}
             placeholderTextColor="#666"
             value={answerInput}
             onChangeText={setAnswerInput}
@@ -446,7 +448,7 @@ export function SmashGameScreen() {
             onPress={handleSubmitAnswer}
             disabled={!answerInput.trim()}
           >
-            <Text style={styles.submitButtonText}>Envoyer la reponse</Text>
+            <Text style={styles.submitButtonText}>{t('game.sendAnswer')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -457,32 +459,32 @@ export function SmashGameScreen() {
       return (
         <View style={styles.inputArea}>
           <View style={styles.questionDisplay}>
-            <Text style={styles.questionDisplayLabel}>Question:</Text>
+            <Text style={styles.questionDisplayLabel}>{t('game.question')}:</Text>
             <Text style={styles.questionDisplayText}>{currentQuestion}</Text>
           </View>
           {expectedAnswer && (
             <View style={styles.expectedAnswerDisplay}>
-              <Text style={styles.expectedAnswerLabel}>Reponse attendue:</Text>
+              <Text style={styles.expectedAnswerLabel}>{t('game.expectedAnswer')}</Text>
               <Text style={styles.expectedAnswerText}>{expectedAnswer}</Text>
             </View>
           )}
           <View style={styles.answerDisplay}>
-            <Text style={styles.answerDisplayLabel}>Reponse du defenseur:</Text>
+            <Text style={styles.answerDisplayLabel}>{t('game.defenderAnswer')}</Text>
             <Text style={styles.answerDisplayText}>{currentAnswer}</Text>
           </View>
-          <Text style={styles.resultPrompt}>La reponse est-elle correcte ?</Text>
+          <Text style={styles.resultPrompt}>{t('game.isCorrect')}</Text>
           <View style={styles.resultButtons}>
             <TouchableOpacity
               style={[styles.resultButton, styles.correctButton]}
               onPress={() => handleResult(true)}
             >
-              <Text style={styles.resultButtonText}>Correct</Text>
+              <Text style={styles.resultButtonText}>{t('game.correct')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.resultButton, styles.incorrectButton]}
               onPress={() => handleResult(false)}
             >
-              <Text style={styles.resultButtonText}>Incorrect</Text>
+              <Text style={styles.resultButtonText}>{t('game.incorrect')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -493,13 +495,13 @@ export function SmashGameScreen() {
     return (
       <View style={styles.inputArea}>
         <Text style={styles.waitingText}>
-          {currentPhase === 'CONCERTATION' && !isAttacker && "L'equipe adverse se concerte..."}
-          {currentPhase === 'QUESTION' && !isAttacker && "L'equipe adverse pose une question..."}
-          {currentPhase === 'VALIDATE' && isAttacker && "Validation de la question en cours..."}
-          {currentPhase === 'ANSWER' && isAttacker && "L'equipe adverse repond..."}
-          {currentPhase === 'RESULT' && !isAttacker && "Validation de la reponse en cours..."}
-          {currentPhase === 'TURN_START' && 'Debut du tour...'}
-          {!currentPhase && 'Chargement...'}
+          {currentPhase === 'CONCERTATION' && !isAttacker && t('game.opponentConcertation')}
+          {currentPhase === 'QUESTION' && !isAttacker && t('game.opponentAskingQuestion')}
+          {currentPhase === 'VALIDATE' && isAttacker && t('game.validationInProgress')}
+          {currentPhase === 'ANSWER' && isAttacker && t('game.opponentResponding')}
+          {currentPhase === 'RESULT' && !isAttacker && t('game.resultValidation')}
+          {currentPhase === 'TURN_START' && t('game.turnStart')}
+          {!currentPhase && t('game.loading')}
         </Text>
       </View>
     );
@@ -514,7 +516,7 @@ export function SmashGameScreen() {
         <Text style={styles.eventMessageText}>{lastResult.message}</Text>
         {lastResult.points > 0 && lastResult.winner && (
           <Text style={styles.eventMessageText}>
-            +{lastResult.points} points pour l'equipe {lastResult.winner}
+            {t('game.pointsForTeam', { points: lastResult.points, team: lastResult.winner })}
           </Text>
         )}
       </View>
@@ -528,9 +530,9 @@ export function SmashGameScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>MINDSOCCER</Text>
+        <Text style={styles.headerTitle}>{t('app.name').toUpperCase()}</Text>
         <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveMatch}>
-          <Text style={styles.leaveButtonText}>Quitter la manche</Text>
+          <Text style={styles.leaveButtonText}>{t('game.leaveRound')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -539,7 +541,7 @@ export function SmashGameScreen() {
         <Text style={styles.roundTypeText}>
           {roundType === 'SMASH_A' ? 'SMASH A' : roundType === 'SMASH_B' ? 'SMASH B' : 'SMASH A / SMASH B'}
         </Text>
-        <Text style={styles.roundSubtext}>MANCHE EN COURS</Text>
+        <Text style={styles.roundSubtext}>{t('game.roundInProgress')}</Text>
       </View>
 
       {/* Debug Info - Remove in production */}
@@ -567,20 +569,20 @@ export function SmashGameScreen() {
       {!isPlaying && lastResult && (
         <View style={styles.endedOverlay}>
           <View style={styles.endedContent}>
-            <Text style={styles.endedTitle}>Round termine</Text>
+            <Text style={styles.endedTitle}>{t('game.roundEnded')}</Text>
             <Text style={styles.endedScore}>{scoreA} - {scoreB}</Text>
             <Text style={styles.endedWinner}>
               {scoreA > scoreB
-                ? myTeam === 'A' ? 'Vous gagnez !' : 'Equipe A gagne'
+                ? myTeam === 'A' ? t('game.youWinRound') : t('game.teamAWins')
                 : scoreB > scoreA
-                ? myTeam === 'B' ? 'Vous gagnez !' : 'Equipe B gagne'
-                : 'Egalite !'}
+                ? myTeam === 'B' ? t('game.youWinRound') : t('game.teamBWins')
+                : t('game.tie')}
             </Text>
             <TouchableOpacity
               style={styles.returnButton}
               onPress={() => navigation.navigate('Main', { screen: 'Lobby' })}
             >
-              <Text style={styles.returnButtonText}>Retour au Lobby</Text>
+              <Text style={styles.returnButtonText}>{t('game.backToLobby')}</Text>
             </TouchableOpacity>
           </View>
         </View>

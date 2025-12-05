@@ -1,7 +1,8 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, BackHandler, Alert, Platform } from 'react-native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { useMatchStore, useGameStore, useAuthStore } from '../../stores';
 import { wsService } from '../../services';
 import { RootStackParamList } from '../../navigation/types';
@@ -12,6 +13,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'MatchWaiting'>;
 
 export function MatchWaitingScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { matchId } = route.params;
@@ -20,6 +22,8 @@ export function MatchWaitingScreen() {
   const { startGame } = useGameStore();
   const { user } = useAuthStore();
   const [isStarting, setIsStarting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const hasLeftRef = useRef(false);
 
   const refreshMatch = useCallback(() => {
     fetchMatch(matchId);
@@ -119,11 +123,67 @@ export function MatchWaitingScreen() {
     };
   }, [matchId, refreshMatch, startGame, navigation, handleLobbyUpdate]);
 
-  const handleLeave = async () => {
-    await leaveMatch();
-    wsService.unsubscribeFromMatch();
-    navigation.goBack();
-  };
+  const handleLeave = useCallback(async (showConfirm = true) => {
+    // Prevent double-leaving
+    if (hasLeftRef.current || isLeaving) return;
+
+    const doLeave = async () => {
+      hasLeftRef.current = true;
+      setIsLeaving(true);
+      try {
+        await leaveMatch();
+        wsService.unsubscribeFromMatch();
+        navigation.goBack();
+      } catch (error) {
+        console.error('[MatchWaiting] Error leaving match:', error);
+        hasLeftRef.current = false;
+      } finally {
+        setIsLeaving(false);
+      }
+    };
+
+    if (showConfirm) {
+      Alert.alert(
+        t('match.leaveConfirmTitle'),
+        t('match.leaveConfirmMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('match.leaveMatch'), style: 'destructive', onPress: doLeave }
+        ]
+      );
+    } else {
+      await doLeave();
+    }
+  }, [leaveMatch, navigation, t, isLeaving]);
+
+  // Handle Android back button
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleLeave(true);
+        return true; // Prevent default back behavior
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleLeave])
+  );
+
+  // Handle beforeunload for web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        // Call leaveMatch without waiting (fire and forget)
+        leaveMatch().catch(console.error);
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [leaveMatch]);
 
   const handleStartMatch = async () => {
     setIsStarting(true);
@@ -160,12 +220,12 @@ export function MatchWaitingScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Salle d'attente</Text>
+        <Text style={styles.title}>{t('match.waitingRoom')}</Text>
         <Text style={styles.matchType}>
-          {maxPlayersPerTeam}v{maxPlayersPerTeam} {currentMatch.ranked ? '• Ranked' : '• Casual'}
+          {maxPlayersPerTeam}v{maxPlayersPerTeam} {currentMatch.ranked ? `• ${t('match.ranked')}` : `• ${t('match.casual')}`}
         </Text>
         <View style={styles.codeContainer}>
-          <Text style={styles.codeLabel}>Code</Text>
+          <Text style={styles.codeLabel}>{t('match.code')}</Text>
           <Text style={styles.code}>{currentMatch.code}</Text>
         </View>
       </View>
@@ -174,7 +234,7 @@ export function MatchWaitingScreen() {
         {/* Team A */}
         <View style={styles.team}>
           <View style={styles.teamHeader}>
-            <Text style={styles.teamTitle}>Équipe A</Text>
+            <Text style={styles.teamTitle}>{t('match.teamA')}</Text>
             <Text style={[styles.teamCount, currentMatch.teamA.isFull && styles.teamCountFull]}>
               {currentMatch.teamA.playerCount}/{maxPlayersPerTeam}
               {currentMatch.teamA.isFull && ' ✓'}
@@ -184,7 +244,7 @@ export function MatchWaitingScreen() {
             <View key={player.id} style={styles.playerCard}>
               <Text style={styles.playerName}>{player.handle}</Text>
               {currentMatch.teamA.captainId === player.id && (
-                <Text style={styles.captainBadge}>👑 Capitaine</Text>
+                <Text style={styles.captainBadge}>{t('match.captainBadge')}</Text>
               )}
             </View>
           ))}
@@ -192,19 +252,19 @@ export function MatchWaitingScreen() {
             .fill(null)
             .map((_, i) => (
               <View key={`empty-a-${i}`} style={styles.emptySlot}>
-                <Text style={styles.emptySlotText}>En attente...</Text>
+                <Text style={styles.emptySlotText}>{t('match.waitingSlot')}</Text>
               </View>
             ))}
         </View>
 
         <View style={styles.vsContainer}>
-          <Text style={styles.vs}>VS</Text>
+          <Text style={styles.vs}>{t('match.vs')}</Text>
         </View>
 
         {/* Team B */}
         <View style={styles.team}>
           <View style={styles.teamHeader}>
-            <Text style={styles.teamTitle}>Équipe B</Text>
+            <Text style={styles.teamTitle}>{t('match.teamB')}</Text>
             <Text style={[styles.teamCount, currentMatch.teamB.isFull && styles.teamCountFull]}>
               {currentMatch.teamB.playerCount}/{maxPlayersPerTeam}
               {currentMatch.teamB.isFull && ' ✓'}
@@ -214,7 +274,7 @@ export function MatchWaitingScreen() {
             <View key={player.id} style={styles.playerCard}>
               <Text style={styles.playerName}>{player.handle}</Text>
               {currentMatch.teamB.captainId === player.id && (
-                <Text style={styles.captainBadge}>👑 Capitaine</Text>
+                <Text style={styles.captainBadge}>{t('match.captainBadge')}</Text>
               )}
             </View>
           ))}
@@ -222,7 +282,7 @@ export function MatchWaitingScreen() {
             .fill(null)
             .map((_, i) => (
               <View key={`empty-b-${i}`} style={styles.emptySlot}>
-                <Text style={styles.emptySlotText}>En attente...</Text>
+                <Text style={styles.emptySlotText}>{t('match.waitingSlot')}</Text>
               </View>
             ))}
         </View>
@@ -231,8 +291,8 @@ export function MatchWaitingScreen() {
       <View style={styles.statusContainer}>
         {canStart ? (
           <View style={styles.readyContainer}>
-            <Text style={styles.readyText}>Match pret a demarrer !</Text>
-            <Text style={styles.readySubtext}>Les deux equipes sont completes</Text>
+            <Text style={styles.readyText}>{t('match.readyToStart')}</Text>
+            <Text style={styles.readySubtext}>{t('match.teamsComplete')}</Text>
             {isCaptain ? (
               <TouchableOpacity
                 style={[styles.startButton, isStarting && styles.startButtonDisabled]}
@@ -242,12 +302,12 @@ export function MatchWaitingScreen() {
                 {isStarting ? (
                   <ActivityIndicator color="#1a1a2e" />
                 ) : (
-                  <Text style={styles.startButtonText}>LANCER LE MATCH</Text>
+                  <Text style={styles.startButtonText}>{t('match.startMatch')}</Text>
                 )}
               </TouchableOpacity>
             ) : (
               <>
-                <Text style={styles.readySubtext}>En attente du capitaine...</Text>
+                <Text style={styles.readySubtext}>{t('match.waitingForCaptain')}</Text>
                 <ActivityIndicator color="#00ff88" style={{ marginTop: 12 }} />
               </>
             )}
@@ -255,14 +315,14 @@ export function MatchWaitingScreen() {
         ) : (
           <View style={styles.waitingContainer}>
             <Text style={styles.waitingText}>
-              En attente de joueurs ({totalPlayers}/{maxPlayers})
+              {t('match.waitingForPlayersCount', { current: totalPlayers, max: maxPlayers })}
             </Text>
             <Text style={styles.waitingSubtext}>
               {!currentMatch.teamA.isFull && !currentMatch.teamB.isFull
-                ? 'Les deux equipes ont besoin de joueurs'
+                ? t('match.bothTeamsNeed')
                 : !currentMatch.teamA.isFull
-                ? "L'equipe A a besoin de joueurs"
-                : "L'equipe B a besoin de joueurs"}
+                ? t('match.teamANeeds')
+                : t('match.teamBNeeds')}
             </Text>
           </View>
         )}
@@ -270,13 +330,13 @@ export function MatchWaitingScreen() {
 
       <TouchableOpacity
         style={styles.leaveButton}
-        onPress={handleLeave}
-        disabled={isLoading}
+        onPress={() => handleLeave(false)}
+        disabled={isLoading || isLeaving}
       >
-        {isLoading ? (
+        {isLoading || isLeaving ? (
           <ActivityIndicator color="#ff4444" />
         ) : (
-          <Text style={styles.leaveButtonText}>Quitter le match</Text>
+          <Text style={styles.leaveButtonText}>{t('match.leaveMatch')}</Text>
         )}
       </TouchableOpacity>
     </View>

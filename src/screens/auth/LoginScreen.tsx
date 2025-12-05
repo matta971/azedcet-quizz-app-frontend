@@ -9,10 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores';
 import { AuthScreenProps } from '../../navigation/types';
 
 export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
+  const { t } = useTranslation();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
 
@@ -34,8 +36,8 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>MindSoccer</Text>
-        <Text style={styles.subtitle}>Connexion</Text>
+        <Text style={styles.title}>{t('app.name')}</Text>
+        <Text style={styles.subtitle}>{t('auth.login')}</Text>
 
         {error && (
           <View style={styles.errorContainer}>
@@ -45,7 +47,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
 
         <TextInput
           style={styles.input}
-          placeholder="Email ou pseudo"
+          placeholder={`${t('auth.email')} ${t('common.or')} ${t('auth.handle')}`}
           placeholderTextColor="#666"
           value={identifier}
           onChangeText={setIdentifier}
@@ -56,7 +58,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
 
         <TextInput
           style={styles.input}
-          placeholder="Mot de passe"
+          placeholder={t('auth.password')}
           placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
@@ -71,12 +73,12 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Se connecter</Text>
+            <Text style={styles.buttonText}>{t('auth.loginButton')}</Text>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.linkButton} onPress={handleNavigateToRegister}>
-          <Text style={styles.linkText}>Pas encore de compte ? S'inscrire</Text>
+          <Text style={styles.linkText}>{t('auth.noAccount')} {t('auth.registerButton')}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

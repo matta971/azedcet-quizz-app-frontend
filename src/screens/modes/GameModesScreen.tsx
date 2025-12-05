@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
+import { LogoHeader } from '../../components';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -85,7 +86,7 @@ export function GameModesScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.navBar}>
-            <Text style={styles.logoText}>MINDSOCCER</Text>
+            <LogoHeader size="small" />
             <View style={styles.navLinks}>
               <Text style={styles.navLink}>Accueil</Text>
               <Text style={[styles.navLink, styles.navLinkActive]}>Modes</Text>
@@ -151,12 +152,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  logoText: {
-    color: '#00ff88',
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1,
   },
   navLinks: {
     flexDirection: 'row',

@@ -10,6 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
+import { LogoHeader } from '../../components';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -66,12 +67,7 @@ export function TutorialScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <View style={styles.logoIcon}>
-                <Text style={styles.logoIconText}>MS</Text>
-              </View>
-              <Text style={styles.logoText}>MINDSOCCER</Text>
-            </View>
+            <LogoHeader size="small" />
           </View>
 
           {/* Title */}
@@ -204,31 +200,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
-  },
-  logoContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#00ff88',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  logoIconText: {
-    color: '#1a1a2e',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  logoText: {
-    color: '#00ff88',
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 2,
   },
   title: {
     color: '#00ff88',

@@ -14,10 +14,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores';
 import { apiService } from '../../services';
 import { RootStackParamList } from '../../navigation/types';
 import { Language, UpdateProfileRequest } from '../../types';
+import { changeLanguage } from '../../i18n';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -56,6 +58,7 @@ const COUNTRIES: { code: string; name: string }[] = [
 ];
 
 export function ProfileEditScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user, setUser } = useAuthStore();
 
@@ -84,7 +87,7 @@ export function ProfileEditScreen() {
     setError(null);
 
     if (birthDate && !validateBirthDate(birthDate)) {
-      setError('Format de date invalide (AAAA-MM-JJ)');
+      setError(t('auth.errors.invalidDateFormat'));
       return;
     }
 
@@ -104,13 +107,17 @@ export function ProfileEditScreen() {
       if (response.success && response.data) {
         // Update the user in the store
         setUser(response.data);
-        Alert.alert('Succès', 'Profil mis à jour avec succès');
+        // Update the app language
+        if (preferredLanguage) {
+          changeLanguage(preferredLanguage);
+        }
+        Alert.alert(t('common.success'), t('profile.updateSuccess'));
         navigation.goBack();
       } else {
-        setError(response.error?.message || 'Erreur lors de la mise à jour');
+        setError(response.error?.message || t('profile.updateError'));
       }
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de la mise à jour');
+      setError(err.message || t('profile.updateError'));
     } finally {
       setIsLoading(false);
     }
@@ -118,12 +125,12 @@ export function ProfileEditScreen() {
 
   const getCountryName = () => {
     const found = COUNTRIES.find((c) => c.code === country);
-    return found ? found.name : 'Sélectionner un pays';
+    return found ? t(`countries.${found.code}`) : t('auth.selectCountry');
   };
 
   const getLanguageName = () => {
     const found = LANGUAGES.find((l) => l.code === preferredLanguage);
-    return found ? found.name : 'Sélectionner une langue';
+    return found ? t(`languages.${found.code}`) : t('auth.selectLanguage');
   };
 
   return (
@@ -142,12 +149,12 @@ export function ProfileEditScreen() {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backText}>← Retour</Text>
+            <Text style={styles.backText}>← {t('common.back')}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>MODIFIER LE PROFIL</Text>
+          <Text style={styles.title}>{t('profile.editProfile')}</Text>
           <Text style={styles.subtitle}>
-            Mettez à jour vos informations personnelles
+            {t('profile.personalInfo')}
           </Text>
 
           {error && (
@@ -158,24 +165,24 @@ export function ProfileEditScreen() {
 
           {/* User Info (read-only) */}
           <View style={styles.readOnlySection}>
-            <Text style={styles.sectionLabel}>Informations du compte</Text>
+            <Text style={styles.sectionLabel}>{t('profile.accountInfo')}</Text>
             <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyLabel}>Pseudo</Text>
+              <Text style={styles.readOnlyLabel}>{t('auth.handle')}</Text>
               <Text style={styles.readOnlyValue}>{user?.handle}</Text>
             </View>
             <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyLabel}>Email</Text>
+              <Text style={styles.readOnlyLabel}>{t('auth.email')}</Text>
               <Text style={styles.readOnlyValue}>{user?.email}</Text>
             </View>
           </View>
 
           {/* Editable Fields */}
-          <Text style={styles.sectionLabel}>Informations personnelles</Text>
+          <Text style={styles.sectionLabel}>{t('profile.personalInfo')}</Text>
 
           <View style={styles.row}>
             <TextInput
               style={[styles.input, styles.halfInput]}
-              placeholder="Prénom"
+              placeholder={t('auth.firstName')}
               placeholderTextColor="#666"
               value={firstName}
               onChangeText={setFirstName}
@@ -183,7 +190,7 @@ export function ProfileEditScreen() {
             />
             <TextInput
               style={[styles.input, styles.halfInput]}
-              placeholder="Nom"
+              placeholder={t('auth.lastName')}
               placeholderTextColor="#666"
               value={lastName}
               onChangeText={setLastName}
@@ -193,7 +200,7 @@ export function ProfileEditScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Date de naissance (AAAA-MM-JJ)"
+            placeholder={t('auth.birthDate')}
             placeholderTextColor="#666"
             value={birthDate}
             onChangeText={setBirthDate}
@@ -230,7 +237,7 @@ export function ProfileEditScreen() {
             {isLoading ? (
               <ActivityIndicator color="#1a1a2e" />
             ) : (
-              <Text style={styles.saveButtonText}>ENREGISTRER</Text>
+              <Text style={styles.saveButtonText}>{t('common.save').toUpperCase()}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -244,7 +251,7 @@ export function ProfileEditScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Sélectionner un pays</Text>
+              <Text style={styles.modalTitle}>{t('auth.selectCountry')}</Text>
               <FlatList
                 data={COUNTRIES}
                 keyExtractor={(item) => item.code}
@@ -265,7 +272,7 @@ export function ProfileEditScreen() {
                         country === item.code && styles.modalItemTextSelected,
                       ]}
                     >
-                      {item.name}
+                      {t(`countries.${item.code}`)}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -274,7 +281,7 @@ export function ProfileEditScreen() {
                 style={styles.modalCloseButton}
                 onPress={() => setShowCountryPicker(false)}
               >
-                <Text style={styles.modalCloseText}>Fermer</Text>
+                <Text style={styles.modalCloseText}>{t('common.close')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -289,7 +296,7 @@ export function ProfileEditScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Langue préférée</Text>
+              <Text style={styles.modalTitle}>{t('auth.preferredLanguage')}</Text>
               <FlatList
                 data={LANGUAGES}
                 keyExtractor={(item) => item.code}
@@ -311,7 +318,7 @@ export function ProfileEditScreen() {
                           styles.modalItemTextSelected,
                       ]}
                     >
-                      {item.name}
+                      {t(`languages.${item.code}`)}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -320,7 +327,7 @@ export function ProfileEditScreen() {
                 style={styles.modalCloseButton}
                 onPress={() => setShowLanguagePicker(false)}
               >
-                <Text style={styles.modalCloseText}>Fermer</Text>
+                <Text style={styles.modalCloseText}>{t('common.close')}</Text>
               </TouchableOpacity>
             </View>
           </View>
